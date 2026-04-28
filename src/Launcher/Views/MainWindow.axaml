@@ -6,7 +6,7 @@
         mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="800"
         x:Class="PcLun.Views.MainWindow"
         x:DataType="vm:MainViewModel"
-        Title="PcLun — Minecraft 1.16.5 OptiFine"
+        Title="PcLun by damirov666 — Minecraft 1.16.5 OptiFine"
         Width="1280" Height="800" MinWidth="1100" MinHeight="700"
         ExtendClientAreaToDecorationsHint="False"
         WindowStartupLocation="CenterScreen">
@@ -29,7 +29,7 @@
                             </Border>
                             <StackPanel VerticalAlignment="Center">
                                 <TextBlock Classes="brand" Text="PcLun" />
-                                <TextBlock Classes="dim" Text="Ultra FPS Edition" />
+                                <TextBlock Classes="dim" Text="by damirov666 · Ultra FPS" />
                             </StackPanel>
                         </StackPanel>
                     </StackPanel>
@@ -148,7 +148,7 @@
                                      IsVisible="{Binding IsBusy}" />
                     </StackPanel>
                     <TextBlock Grid.Column="1" Classes="dim"
-                               Text="PcLun 0.2.0 · Minecraft 1.16.5 + OptiFine HD U G8"
+                               Text="PcLun 0.2.1 by damirov666 · t.me/damirov666 · Minecraft 1.16.5 + OptiFine"
                                VerticalAlignment="Center" Margin="20,0,0,0" />
                 </Grid>
             </Border>
@@ -168,6 +168,8 @@
                                         <TextBlock Classes="h1" Text="Minecraft 1.16.5" />
                                         <TextBlock Classes="subtitle" TextWrapping="Wrap"
                                                    Text="OptiFine HD U G8 · профиль оптимизации применяется автоматически перед каждым запуском." />
+                                        <TextBlock Classes="dim" Margin="0,4,0,0"
+                                                   Text="Лаунчер by damirov666 · Telegram: t.me/damirov666" />
                                         <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,8,0,0">
                                             <Border Classes="pill">
                                                 <TextBlock Text="{Binding ProfileBadge}" FontSize="11" />
@@ -231,7 +233,7 @@
                             <Grid Grid.Row="2" ColumnDefinitions="*,*" Margin="0,18,0,0">
                                 <Border Grid.Column="0" Classes="card" Margin="0,0,9,0">
                                     <StackPanel Spacing="10">
-                                        <TextBlock Classes="h3" Text="Что делает Ultra FPS Edition" />
+                                        <TextBlock Classes="h3" Text="Что делает PcLun by damirov666" />
                                         <Border Classes="divider" />
                                         <TextBlock Classes="subtitle" TextWrapping="Wrap"
                                                    Text="• Авто-установка Java 8 (Adoptium) и Minecraft 1.16.5 с проверкой SHA-1." />
@@ -702,11 +704,39 @@
                             <Border Classes="card">
                                 <StackPanel Spacing="10">
                                     <TextBlock Classes="h2" Text="PcLun" />
-                                    <TextBlock Classes="subtitle" Text="Версия 0.2.0 — Ultra FPS Edition" />
+                                    <TextBlock Classes="subtitle" Text="Версия 0.2.1 · Ultra FPS Edition" />
                                     <Border Classes="divider" />
                                     <TextBlock Classes="subtitle" TextWrapping="Wrap"
-                                               Text="Минималистичный лаунчер Minecraft 1.16.5 с авто-установкой OptiFine, профилями FPS-оптимизации и онлайн-счётчиком. Открытый исходный код." />
-                                    <TextBlock Classes="dim" Text="github.com/prov50686-ops/pclun" />
+                                               Text="Минималистичный лаунчер Minecraft 1.16.5 с авто-установкой OptiFine, профилями FPS-оптимизации и онлайн-счётчиком." />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h3" Text="Автор" />
+                                    <Border Classes="divider" />
+                                    <StackPanel Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
+                                        <Border Width="56" Height="56" CornerRadius="28"
+                                                Background="{DynamicResource AccentBrush}"
+                                                HorizontalAlignment="Left">
+                                            <TextBlock Text="D" FontSize="28" FontWeight="Black"
+                                                       Foreground="#000000"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+                                        <StackPanel VerticalAlignment="Center" Spacing="2">
+                                            <TextBlock Classes="h2" Text="damirov666" />
+                                            <TextBlock Classes="dim" Text="автор лаунчера" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <Border Classes="divider" />
+                                    <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <Button Classes="primary"
+                                                Content="Telegram: t.me/damirov666"
+                                                Click="OpenTelegram_Click" />
+                                        <Button Content="GitHub репозиторий"
+                                                Click="OpenGithub_Click" />
+                                    </StackPanel>
+                                    <TextBlock Classes="dim" Text="Написать автору, предложить идею или сообщить о баге — всё через Telegram." />
                                 </StackPanel>
                             </Border>
 

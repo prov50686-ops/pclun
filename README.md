@@ -1,7 +1,9 @@
-# PcLun — лаунчер Minecraft 1.16.5 + OptiFine для Windows
+# PcLun by damirov666 — лаунчер Minecraft 1.16.5 + OptiFine для Windows
 
 > Чёрно-белый минималистичный лаунчер на русском, оптимизированный под слабые ПК.
 > **Ultra FPS Edition.**
+>
+> Автор: [**damirov666**](https://t.me/damirov666) · Telegram: [t.me/damirov666](https://t.me/damirov666)
 
 ![status](https://github.com/prov50686-ops/pclun/actions/workflows/build-windows.yml/badge.svg)
 
