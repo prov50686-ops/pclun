@@ -148,7 +148,7 @@
                                      IsVisible="{Binding IsBusy}" />
                     </StackPanel>
                     <TextBlock Grid.Column="1" Classes="dim"
-                               Text="PcLun 0.2.2 by MrDomik · Minecraft 1.16.5 + OptiFine"
+                               Text="PcLun 0.2.3 by MrDomik · Minecraft 1.16.5 + OptiFine"
                                VerticalAlignment="Center" Margin="20,0,0,0" />
                 </Grid>
             </Border>
@@ -183,11 +183,17 @@
                                         </StackPanel>
                                     </StackPanel>
 
-                                    <Button Grid.Column="1" Classes="play"
-                                            Content="{Binding PlayButtonText}"
-                                            Command="{Binding PlayCommand}"
-                                            IsEnabled="{Binding CanPlay}"
-                                            MinWidth="220" VerticalAlignment="Center" />
+                                    <StackPanel Grid.Column="1" Spacing="10" VerticalAlignment="Center"
+                                                MinWidth="220">
+                                        <Button Classes="play"
+                                                Content="{Binding PlayButtonText}"
+                                                Command="{Binding PlayCommand}"
+                                                IsEnabled="{Binding CanPlay}"
+                                                HorizontalAlignment="Stretch" />
+                                        <Button Content="📁 Открыть папку с игрой"
+                                                Command="{Binding OpenGameDirCommand}"
+                                                HorizontalAlignment="Stretch" />
+                                    </StackPanel>
                                 </Grid>
                             </Border>
 
@@ -704,7 +710,7 @@
                             <Border Classes="card">
                                 <StackPanel Spacing="10">
                                     <TextBlock Classes="h2" Text="PcLun" />
-                                    <TextBlock Classes="subtitle" Text="Версия 0.2.2 · Ultra FPS Edition" />
+                                    <TextBlock Classes="subtitle" Text="Версия 0.2.3 · Ultra FPS Edition" />
                                     <Border Classes="divider" />
                                     <TextBlock Classes="subtitle" TextWrapping="Wrap"
                                                Text="Минималистичный лаунчер Minecraft 1.16.5 с авто-установкой OptiFine, профилями FPS-оптимизации и онлайн-счётчиком." />
