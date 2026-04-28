@@ -22,7 +22,8 @@ public record LaunchOptions(
     int WindowHeight,
     bool Fullscreen,
     bool UseOptimizedJvm,
-    FpsProfile Profile);
+    string CustomJvmArgs,
+    LauncherSettings Settings);
 
 public static class GameLauncher
 {
@@ -83,16 +84,21 @@ public static class GameLauncher
         // JVM args
         var jvmArgs = new List<string>();
         if (opt.UseOptimizedJvm)
-            jvmArgs.AddRange(OptimizationProfile.GetJvmArgs(opt.RamMb));
+            jvmArgs.AddRange(OptimizationProfile.GetJvmArgs(opt.RamMb, opt.CustomJvmArgs));
         else
         {
             jvmArgs.Add($"-Xms{opt.RamMb}M");
             jvmArgs.Add($"-Xmx{opt.RamMb}M");
+            if (!string.IsNullOrWhiteSpace(opt.CustomJvmArgs))
+            {
+                foreach (var token in opt.CustomJvmArgs.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                    jvmArgs.Add(token);
+            }
         }
 
         jvmArgs.Add($"-Djava.library.path={Paths.NativesDir}");
         jvmArgs.Add($"-Dminecraft.launcher.brand=PcLun");
-        jvmArgs.Add($"-Dminecraft.launcher.version=0.1.0");
+        jvmArgs.Add($"-Dminecraft.launcher.version=0.2.0");
         jvmArgs.Add("-cp");
         jvmArgs.Add(cpString);
 
@@ -117,10 +123,27 @@ public static class GameLauncher
             finalArgs.Add(opt.WindowHeight.ToString());
         }
 
-        // Запись опций перед стартом
+        // Авто-подключение к серверу при старте: --server host [--port N]
+        if (!string.IsNullOrWhiteSpace(opt.Settings.AutoConnectServer))
+        {
+            var raw = opt.Settings.AutoConnectServer.Trim();
+            string host = raw;
+            int port = 25565;
+            var colon = raw.LastIndexOf(':');
+            if (colon > 0 && int.TryParse(raw[(colon + 1)..], out var parsedPort))
+            {
+                host = raw[..colon];
+                port = parsedPort;
+            }
+            finalArgs.Add("--server");
+            finalArgs.Add(host);
+            finalArgs.Add("--port");
+            finalArgs.Add(port.ToString());
+        }
+
+        // Запись опций перед стартом — всегда переписываем по текущим настройкам.
         Directory.CreateDirectory(Paths.GameDir);
-        OptimizationProfile.WriteOptionsTxt(Paths.GameDir, opt.Profile);
-        OptimizationProfile.WriteOptifineTxt(Paths.GameDir, opt.Profile);
+        OptimizationProfile.WriteAll(Paths.GameDir, opt.Settings);
 
         var psi = new ProcessStartInfo(javaPath)
         {

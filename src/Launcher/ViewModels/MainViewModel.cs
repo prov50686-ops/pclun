@@ -1,9 +1,16 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.IO;
 using System.Reactive;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using PcLun.Services;
 using ReactiveUI;
@@ -13,55 +20,176 @@ namespace PcLun.ViewModels;
 public class MainViewModel : ReactiveObject
 {
     private readonly Window? _owner;
+    private readonly LauncherSettings _settings;
+    private bool _suppressSave;
 
     public MainViewModel() : this(null) { }
 
     public MainViewModel(Window? owner)
     {
         _owner = owner;
+
+        _settings = LauncherSettings.Load();
+
+        // последний сохранённый аккаунт (если есть) переопределяет ник
         var saved = AuthService.LoadSaved();
         if (saved is not null)
         {
-            _nickname = saved.Name;
-            _authModeIndex = saved.Type == "msa" ? 1 : 0;
-        }
-        else
-        {
-            _nickname = "Player" + new Random().Next(100, 999);
+            _settings.Nickname = saved.Name;
+            _settings.AuthMode = saved.Type == "msa" ? 1 : 0;
         }
 
-        _ramMb = SystemInfo.RecommendedRamMb();
-        UpdateRamHint();
+        if (_settings.RamMb < 512) _settings.RamMb = SystemInfo.RecommendedRamMb();
+        var total = SystemInfo.TotalRamMb;
+        MaxRamMb = (int)Math.Max(2048L, total > 0 ? total - 1024 : 8192);
+
+        // популярные суррогаты-серверы (адреса публичных тестовых)
+        ServerSuggestions = new ObservableCollection<string>
+        {
+            "play.hypixel.net",
+            "mc.hypixel.net",
+            "play.cubecraft.net",
+            "hub.mineplex.com",
+            "play.purpleprison.net",
+            "play.pika-network.net",
+            "mc.complex-gaming.net",
+            "play.craftrise.com.tr",
+            "localhost:25565"
+        };
 
         PlayCommand = ReactiveCommand.CreateFromTask(PlayAsync, this.WhenAnyValue(x => x.CanPlay));
         MicrosoftLoginCommand = ReactiveCommand.CreateFromTask(MicrosoftLoginAsync);
         LogoutCommand = ReactiveCommand.Create(Logout);
+        PickJavaCommand = ReactiveCommand.CreateFromTask(PickJavaAsync);
+        OpenGameDirCommand = ReactiveCommand.Create(() => OpenFolder(Paths.GameDir));
+        OpenModsDirCommand = ReactiveCommand.Create(() => OpenFolder(Path.Combine(Paths.GameDir, "mods")));
+        OpenScreenshotsDirCommand = ReactiveCommand.Create(() => OpenFolder(Path.Combine(Paths.GameDir, "screenshots")));
+        ClearCacheCommand = ReactiveCommand.CreateFromTask(ClearCacheAsync);
+        RefreshLogCommand = ReactiveCommand.Create(RefreshLog);
+        ClearLogCommand = ReactiveCommand.Create(ClearLog);
+        PickServerCommand = ReactiveCommand.Create<string>(PickServer);
 
-        // онлайн-счётчик
+        UpdateRamHint();
+        RefreshLog();
+
         _ = StartOnlineLoopAsync();
+
+        // Авто-сохранение при изменении любого свойства настроек.
+        this.PropertyChanged += (_, e) =>
+        {
+            if (_suppressSave) return;
+            // не сохраняем чисто UI-флаги типа IsHomeTab/StatusText/ProgressPercent.
+            switch (e.PropertyName)
+            {
+                case null:
+                case nameof(IsBusy):
+                case nameof(IsHomeTab):
+                case nameof(IsServersTab):
+                case nameof(IsGraphicsTab):
+                case nameof(IsOptifineTab):
+                case nameof(IsJavaTab):
+                case nameof(IsAccountTab):
+                case nameof(IsToolsTab):
+                case nameof(IsAboutTab):
+                case nameof(StatusText):
+                case nameof(ProgressPercent):
+                case nameof(IsIndeterminate):
+                case nameof(OnlineStatusText):
+                case nameof(LogText):
+                case nameof(AuthStatus):
+                case nameof(CanPlay):
+                case nameof(PlayButtonText):
+                case nameof(NicknameInitial):
+                case nameof(AccountModeLabel):
+                case nameof(ProfileBadge):
+                case nameof(RamBadge):
+                case nameof(ResolutionBadge):
+                case nameof(RamMbDisplay):
+                case nameof(MaxFpsDisplay):
+                case nameof(EntityDistanceDisplay):
+                case nameof(FpsProfileDescription):
+                case nameof(RamHint):
+                case nameof(ResolvedJavaPath):
+                    return;
+            }
+            _settings.Save();
+        };
     }
 
     // ---------- tabs ----------
-    private bool _isHomeTab = true, _isSettingsTab, _isAccountTab, _isAboutTab;
-    public bool IsHomeTab { get => _isHomeTab; set => this.RaiseAndSetIfChanged(ref _isHomeTab, value); }
-    public bool IsSettingsTab { get => _isSettingsTab; set => this.RaiseAndSetIfChanged(ref _isSettingsTab, value); }
-    public bool IsAccountTab { get => _isAccountTab; set => this.RaiseAndSetIfChanged(ref _isAccountTab, value); }
-    public bool IsAboutTab { get => _isAboutTab; set => this.RaiseAndSetIfChanged(ref _isAboutTab, value); }
+    // Один индекс активной вкладки — гарантирует mutual exclusion.
+    private int _activeTab = 0;
+    public int ActiveTab
+    {
+        get => _activeTab;
+        set
+        {
+            if (_activeTab == value) return;
+            _activeTab = value;
+            this.RaisePropertyChanged();
+            this.RaisePropertyChanged(nameof(IsHomeTab));
+            this.RaisePropertyChanged(nameof(IsServersTab));
+            this.RaisePropertyChanged(nameof(IsGraphicsTab));
+            this.RaisePropertyChanged(nameof(IsOptifineTab));
+            this.RaisePropertyChanged(nameof(IsJavaTab));
+            this.RaisePropertyChanged(nameof(IsAccountTab));
+            this.RaisePropertyChanged(nameof(IsToolsTab));
+            this.RaisePropertyChanged(nameof(IsAboutTab));
+        }
+    }
 
-    // ---------- account ----------
-    private string _nickname = "";
-    public string Nickname { get => _nickname; set { this.RaiseAndSetIfChanged(ref _nickname, value); this.RaisePropertyChanged(nameof(UserDisplayName)); this.RaisePropertyChanged(nameof(NicknameInitial)); } }
+    public bool IsHomeTab { get => ActiveTab == 0; set { if (value) ActiveTab = 0; } }
+    public bool IsServersTab { get => ActiveTab == 1; set { if (value) ActiveTab = 1; } }
+    public bool IsGraphicsTab { get => ActiveTab == 2; set { if (value) ActiveTab = 2; } }
+    public bool IsOptifineTab { get => ActiveTab == 3; set { if (value) ActiveTab = 3; } }
+    public bool IsJavaTab { get => ActiveTab == 4; set { if (value) ActiveTab = 4; } }
+    public bool IsAccountTab { get => ActiveTab == 5; set { if (value) ActiveTab = 5; } }
+    public bool IsToolsTab { get => ActiveTab == 6; set { if (value) ActiveTab = 6; } }
+    public bool IsAboutTab { get => ActiveTab == 7; set { if (value) ActiveTab = 7; } }
 
-    private int _authModeIndex; // 0 = offline, 1 = MS
-    public int AuthModeIndex { get => _authModeIndex; set { this.RaiseAndSetIfChanged(ref _authModeIndex, value); this.RaisePropertyChanged(nameof(AuthModeText)); } }
+    // ---------- player ----------
+    public string Nickname
+    {
+        get => _settings.Nickname;
+        set
+        {
+            if (_settings.Nickname == value) return;
+            _settings.Nickname = value;
+            this.RaisePropertyChanged();
+            this.RaisePropertyChanged(nameof(NicknameInitial));
+            this.RaisePropertyChanged(nameof(CanPlay));
+        }
+    }
 
-    public string AuthModeText => AuthModeIndex == 1 ? "Microsoft (премиум)" : "Офлайн";
-    public string UserDisplayName => string.IsNullOrWhiteSpace(Nickname) ? "Гость" : Nickname.Trim();
-    public string NicknameInitial => UserDisplayName.Length > 0 ? UserDisplayName[..1].ToUpper() : "?";
+    public string NicknameInitial =>
+        !string.IsNullOrWhiteSpace(_settings.Nickname) ? _settings.Nickname.Trim()[..1].ToUpper() : "?";
+
+    public int AuthModeIndex
+    {
+        get => _settings.AuthMode;
+        set { if (_settings.AuthMode == value) return; _settings.AuthMode = value; this.RaisePropertyChanged(); this.RaisePropertyChanged(nameof(AccountModeLabel)); }
+    }
+
+    public string AccountModeLabel => _settings.AuthMode == 1 ? "Microsoft" : "Офлайн";
 
     // ---------- ram ----------
-    private int _ramMb;
-    public int RamMb { get => _ramMb; set { this.RaiseAndSetIfChanged(ref _ramMb, value); UpdateRamHint(); } }
+    public int MaxRamMb { get; }
+
+    public int RamMb
+    {
+        get => _settings.RamMb;
+        set
+        {
+            if (_settings.RamMb == value) return;
+            _settings.RamMb = value;
+            this.RaisePropertyChanged();
+            this.RaisePropertyChanged(nameof(RamMbDisplay));
+            this.RaisePropertyChanged(nameof(RamBadge));
+            UpdateRamHint();
+        }
+    }
+
+    public string RamMbDisplay => $"{_settings.RamMb} МБ";
 
     private string _ramHint = "";
     public string RamHint { get => _ramHint; set => this.RaiseAndSetIfChanged(ref _ramHint, value); }
@@ -71,50 +199,211 @@ public class MainViewModel : ReactiveObject
         var rec = SystemInfo.RecommendedRamMb();
         var total = SystemInfo.TotalRamMb;
         RamHint = total > 0
-            ? $"Системная RAM: {total} МБ. Рекомендуем: {rec} МБ. Сейчас: {RamMb} МБ."
-            : $"Рекомендуем для слабых ПК: 1024-2048 МБ. Сейчас: {RamMb} МБ.";
+            ? $"Системная RAM: {total} МБ. Рекомендуем: {rec} МБ."
+            : $"Рекомендуем для слабых ПК: 1024–2048 МБ.";
     }
 
-    // ---------- settings ----------
-    private int _fpsProfileIndex = 0; // 0 = ultra fps
-    public int FpsProfileIndex { get => _fpsProfileIndex; set { this.RaiseAndSetIfChanged(ref _fpsProfileIndex, value); this.RaisePropertyChanged(nameof(FpsProfileDescription)); } }
-
-    public string FpsProfileDescription => FpsProfileIndex switch
+    // ---------- FPS profile ----------
+    public int FpsProfileIndex
     {
-        0 => "Render distance 4, минимум частиц, выкл. облака, Fast Render, Dynamic FPS, Smart Animations off. Цель — максимум FPS на слабом ПК.",
-        1 => "Render distance 8, средние настройки, OptiFine оптимизации сохранены, но с большим качеством картинки.",
-        2 => "Render distance 12, Fancy graphics, без агрессивной оптимизации. Только для мощных ПК.",
+        get => _settings.FpsProfile;
+        set
+        {
+            if (_settings.FpsProfile == value) return;
+            try
+            {
+                _suppressSave = true;
+                _settings.ApplyProfile(value);
+            }
+            finally { _suppressSave = false; }
+            // raise everything
+            RaiseAllSettingsChanged();
+            _settings.Save();
+        }
+    }
+
+    public string FpsProfileDescription => _settings.FpsProfile switch
+    {
+        0 => "🥔 Picture-перфекционизм наоборот: render 2, всё анимированное выкл., AA/AF off. Только цифры FPS.",
+        1 => "Render 4, минимум частиц, без облаков/AO/анимаций. Цель — максимум FPS на слабом ПК.",
+        2 => "Render 8, средние настройки, OptiFine оптимизации сохранены, но картинка приятнее.",
+        3 => "Render 12, Fancy graphics, все анимации, для мощных ПК.",
         _ => ""
     };
 
-    private bool _useOptimizedFlags = true;
-    public bool UseOptimizedFlags { get => _useOptimizedFlags; set => this.RaiseAndSetIfChanged(ref _useOptimizedFlags, value); }
+    public string ProfileBadge => _settings.FpsProfile switch
+    {
+        0 => "🥔 Potato",
+        1 => "⚡ Ultra FPS",
+        2 => "◐ Balanced",
+        3 => "✦ Quality",
+        _ => ""
+    };
 
-    private bool _installOptifine = true;
-    public bool InstallOptifine { get => _installOptifine; set => this.RaiseAndSetIfChanged(ref _installOptifine, value); }
+    public string RamBadge => $"{_settings.RamMb} МБ ОЗУ";
+    public string ResolutionBadge => _settings.Fullscreen ? "Полный экран" : $"{_settings.WindowWidth}×{_settings.WindowHeight}";
 
-    public string LauncherDir => Paths.LauncherRoot;
-    public string GameDir => Paths.GameDir;
-    public string JavaPath => Paths.JavaExe;
+    // ---------- graphics passthroughs ----------
+    public int RenderDistance { get => _settings.RenderDistance; set => SetSetting(value, _settings.RenderDistance, v => _settings.RenderDistance = v); }
+    public int SimulationDistance { get => _settings.SimulationDistance; set => SetSetting(value, _settings.SimulationDistance, v => _settings.SimulationDistance = v); }
+    public int MaxFps
+    {
+        get => _settings.MaxFps;
+        set
+        {
+            if (_settings.MaxFps == value) return;
+            _settings.MaxFps = value;
+            this.RaisePropertyChanged();
+            this.RaisePropertyChanged(nameof(MaxFpsDisplay));
+        }
+    }
+    public string MaxFpsDisplay => _settings.MaxFps >= 260 ? "∞" : _settings.MaxFps.ToString();
 
-    private string _windowWidth = "1280";
-    public string WindowWidth { get => _windowWidth; set => this.RaiseAndSetIfChanged(ref _windowWidth, value); }
+    public int GraphicsMode { get => _settings.GraphicsMode; set => SetSetting(value, _settings.GraphicsMode, v => _settings.GraphicsMode = v); }
+    public int Particles { get => _settings.Particles; set => SetSetting(value, _settings.Particles, v => _settings.Particles = v); }
+    public int SmoothLighting { get => _settings.SmoothLighting; set => SetSetting(value, _settings.SmoothLighting, v => _settings.SmoothLighting = v); }
+    public bool Clouds { get => _settings.Clouds; set => SetSetting(value, _settings.Clouds, v => _settings.Clouds = v); }
+    public bool EntityShadows { get => _settings.EntityShadows; set => SetSetting(value, _settings.EntityShadows, v => _settings.EntityShadows = v); }
+    public bool VSync { get => _settings.VSync; set => SetSetting(value, _settings.VSync, v => _settings.VSync = v); }
+    public int MipmapLevels { get => _settings.MipmapLevels; set => SetSetting(value, _settings.MipmapLevels, v => _settings.MipmapLevels = v); }
+    public int BiomeBlend { get => _settings.BiomeBlend; set => SetSetting(value, _settings.BiomeBlend, v => _settings.BiomeBlend = v); }
+    public double EntityDistance
+    {
+        get => _settings.EntityDistance;
+        set
+        {
+            if (Math.Abs(_settings.EntityDistance - value) < 0.001) return;
+            _settings.EntityDistance = value;
+            this.RaisePropertyChanged();
+            this.RaisePropertyChanged(nameof(EntityDistanceDisplay));
+        }
+    }
+    public string EntityDistanceDisplay => _settings.EntityDistance.ToString("0.00");
 
-    private string _windowHeight = "720";
-    public string WindowHeight { get => _windowHeight; set => this.RaiseAndSetIfChanged(ref _windowHeight, value); }
+    public bool ViewBobbing { get => _settings.ViewBobbing; set => SetSetting(value, _settings.ViewBobbing, v => _settings.ViewBobbing = v); }
+    public int GuiScale { get => _settings.GuiScale; set => SetSetting(value, _settings.GuiScale, v => _settings.GuiScale = v); }
+    public double MasterVolume { get => _settings.MasterVolume; set => SetSetting(value, _settings.MasterVolume, v => _settings.MasterVolume = v); }
 
-    private bool _fullscreen;
-    public bool Fullscreen { get => _fullscreen; set => this.RaiseAndSetIfChanged(ref _fullscreen, value); }
+    // ---------- window ----------
+    public int WindowWidth
+    {
+        get => _settings.WindowWidth;
+        set { if (_settings.WindowWidth == value) return; _settings.WindowWidth = value; this.RaisePropertyChanged(); this.RaisePropertyChanged(nameof(ResolutionBadge)); }
+    }
+    public int WindowHeight
+    {
+        get => _settings.WindowHeight;
+        set { if (_settings.WindowHeight == value) return; _settings.WindowHeight = value; this.RaisePropertyChanged(); this.RaisePropertyChanged(nameof(ResolutionBadge)); }
+    }
+    public bool Fullscreen
+    {
+        get => _settings.Fullscreen;
+        set { if (_settings.Fullscreen == value) return; _settings.Fullscreen = value; this.RaisePropertyChanged(); this.RaisePropertyChanged(nameof(ResolutionBadge)); }
+    }
+
+    private int _resolutionPresetIndex;
+    public int ResolutionPresetIndex
+    {
+        get => _resolutionPresetIndex;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _resolutionPresetIndex, value);
+            (int w, int h)? r = value switch
+            {
+                1 => (1280, 720),
+                2 => (1366, 768),
+                3 => (1600, 900),
+                4 => (1920, 1080),
+                5 => (854, 480),
+                _ => null
+            };
+            if (r is not null)
+            {
+                WindowWidth = r.Value.w;
+                WindowHeight = r.Value.h;
+            }
+        }
+    }
+
+    // ---------- OptiFine ----------
+    public bool InstallOptifine { get => _settings.InstallOptifine; set => SetSetting(value, _settings.InstallOptifine, v => _settings.InstallOptifine = v); }
+    public bool OfFastRender { get => _settings.OfFastRender; set => SetSetting(value, _settings.OfFastRender, v => _settings.OfFastRender = v); }
+    public bool OfFastMath { get => _settings.OfFastMath; set => SetSetting(value, _settings.OfFastMath, v => _settings.OfFastMath = v); }
+    public bool OfSmartAnimations { get => _settings.OfSmartAnimations; set => SetSetting(value, _settings.OfSmartAnimations, v => _settings.OfSmartAnimations = v); }
+    public bool OfDynamicFps { get => _settings.OfDynamicFps; set => SetSetting(value, _settings.OfDynamicFps, v => _settings.OfDynamicFps = v); }
+    public bool OfLazyChunkLoading { get => _settings.OfLazyChunkLoading; set => SetSetting(value, _settings.OfLazyChunkLoading, v => _settings.OfLazyChunkLoading = v); }
+    public bool OfRenderRegions { get => _settings.OfRenderRegions; set => SetSetting(value, _settings.OfRenderRegions, v => _settings.OfRenderRegions = v); }
+    public bool OfShowFps { get => _settings.OfShowFps; set => SetSetting(value, _settings.OfShowFps, v => _settings.OfShowFps = v); }
+
+    public bool OfAnimatedWater { get => _settings.OfAnimatedWater; set => SetSetting(value, _settings.OfAnimatedWater, v => _settings.OfAnimatedWater = v); }
+    public bool OfAnimatedLava { get => _settings.OfAnimatedLava; set => SetSetting(value, _settings.OfAnimatedLava, v => _settings.OfAnimatedLava = v); }
+    public bool OfAnimatedFire { get => _settings.OfAnimatedFire; set => SetSetting(value, _settings.OfAnimatedFire, v => _settings.OfAnimatedFire = v); }
+    public bool OfAnimatedPortal { get => _settings.OfAnimatedPortal; set => SetSetting(value, _settings.OfAnimatedPortal, v => _settings.OfAnimatedPortal = v); }
+    public bool OfAnimatedRedstone { get => _settings.OfAnimatedRedstone; set => SetSetting(value, _settings.OfAnimatedRedstone, v => _settings.OfAnimatedRedstone = v); }
+    public bool OfAnimatedExplosion { get => _settings.OfAnimatedExplosion; set => SetSetting(value, _settings.OfAnimatedExplosion, v => _settings.OfAnimatedExplosion = v); }
+    public bool OfAnimatedTextures { get => _settings.OfAnimatedTextures; set => SetSetting(value, _settings.OfAnimatedTextures, v => _settings.OfAnimatedTextures = v); }
+
+    private static readonly int[] AaLevels = { 0, 2, 4, 8, 16 };
+    public int OfAaLevelIndex
+    {
+        get => Array.IndexOf(AaLevels, _settings.OfAaLevel) is var i && i >= 0 ? i : 0;
+        set { if (value < 0 || value >= AaLevels.Length) return; _settings.OfAaLevel = AaLevels[value]; this.RaisePropertyChanged(); }
+    }
+    public int OfAfLevelIndex
+    {
+        get => Array.IndexOf(AaLevels, _settings.OfAfLevel) is var i && i >= 0 ? i : 0;
+        set { if (value < 0 || value >= AaLevels.Length) return; _settings.OfAfLevel = AaLevels[value]; this.RaisePropertyChanged(); }
+    }
+    public int OfChunkUpdatesIndex
+    {
+        get => Math.Clamp(_settings.OfChunkUpdates - 1, 0, 4);
+        set { _settings.OfChunkUpdates = value + 1; this.RaisePropertyChanged(); }
+    }
+
+    // ---------- Java / JVM ----------
+    public string CustomJavaPath
+    {
+        get => _settings.CustomJavaPath;
+        set
+        {
+            if (_settings.CustomJavaPath == value) return;
+            _settings.CustomJavaPath = value ?? "";
+            this.RaisePropertyChanged();
+            this.RaisePropertyChanged(nameof(ResolvedJavaPath));
+        }
+    }
+    public string ResolvedJavaPath =>
+        string.IsNullOrWhiteSpace(_settings.CustomJavaPath)
+            ? "Авто: " + (File.Exists(Paths.JavaExe) ? Paths.JavaExe : "будет загружена Adoptium Temurin JRE 8u")
+            : "Используется: " + _settings.CustomJavaPath;
+
+    public bool UseOptimizedFlags { get => _settings.UseOptimizedFlags; set => SetSetting(value, _settings.UseOptimizedFlags, v => _settings.UseOptimizedFlags = v); }
+    public string CustomJvmArgs { get => _settings.CustomJvmArgs; set => SetSetting(value ?? "", _settings.CustomJvmArgs, v => _settings.CustomJvmArgs = v); }
+    public string PreLaunchCommand { get => _settings.PreLaunchCommand; set => SetSetting(value ?? "", _settings.PreLaunchCommand, v => _settings.PreLaunchCommand = v); }
+    public int PostLaunchAction { get => _settings.PostLaunchAction; set => SetSetting(value, _settings.PostLaunchAction, v => _settings.PostLaunchAction = v); }
+
+    // ---------- Servers ----------
+    public string AutoConnectServer { get => _settings.AutoConnectServer; set => SetSetting(value ?? "", _settings.AutoConnectServer, v => _settings.AutoConnectServer = v); }
+
+    public ObservableCollection<string> ServerSuggestions { get; }
 
     // ---------- system info ----------
-    public string OsInfo => "ОС: " + SystemInfo.OsName;
+    public string OsName => "ОС: " + SystemInfo.OsName;
     public string ArchInfo => "Архитектура: " + SystemInfo.Arch;
     public string RamInfo => SystemInfo.TotalRamMb > 0 ? $"Память: {SystemInfo.TotalRamMb} МБ" : "Память: неизвестно";
-    public string VersionInfo => "PcLun 0.1.0 — Minecraft 1.16.5 + OptiFine HD U G8";
 
     // ---------- play state ----------
     private bool _isBusy;
-    public bool IsBusy { get => _isBusy; set { this.RaiseAndSetIfChanged(ref _isBusy, value); this.RaisePropertyChanged(nameof(CanPlay)); this.RaisePropertyChanged(nameof(PlayButtonText)); } }
+    public bool IsBusy
+    {
+        get => _isBusy;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _isBusy, value);
+            this.RaisePropertyChanged(nameof(CanPlay));
+            this.RaisePropertyChanged(nameof(PlayButtonText));
+        }
+    }
 
     private string _statusText = "Готово.";
     public string StatusText { get => _statusText; set => this.RaiseAndSetIfChanged(ref _statusText, value); }
@@ -122,9 +411,11 @@ public class MainViewModel : ReactiveObject
     private double _progressPercent;
     public double ProgressPercent { get => _progressPercent; set => this.RaiseAndSetIfChanged(ref _progressPercent, value); }
 
-    public bool CanPlay => !IsBusy && !string.IsNullOrWhiteSpace(Nickname);
+    private bool _isIndeterminate;
+    public bool IsIndeterminate { get => _isIndeterminate; set => this.RaiseAndSetIfChanged(ref _isIndeterminate, value); }
+
+    public bool CanPlay => !IsBusy && !string.IsNullOrWhiteSpace(_settings.Nickname);
     public string PlayButtonText => IsBusy ? "Установка…" : "Играть";
-    public string ReadyDescription => "Версия 1.16.5 с OptiFine, профиль: " + FpsProfileDescription.Split('.')[0];
 
     private string _onlineStatusText = "Подключение…";
     public string OnlineStatusText { get => _onlineStatusText; set => this.RaiseAndSetIfChanged(ref _onlineStatusText, value); }
@@ -132,18 +423,157 @@ public class MainViewModel : ReactiveObject
     private string _authStatus = "";
     public string AuthStatus { get => _authStatus; set => this.RaiseAndSetIfChanged(ref _authStatus, value); }
 
+    // ---------- log ----------
+    private string _logText = "";
+    public string LogText { get => _logText; set => this.RaiseAndSetIfChanged(ref _logText, value); }
+
+    // ---------- commands ----------
     public ICommand PlayCommand { get; }
     public ICommand MicrosoftLoginCommand { get; }
     public ICommand LogoutCommand { get; }
+    public ICommand PickJavaCommand { get; }
+    public ICommand OpenGameDirCommand { get; }
+    public ICommand OpenModsDirCommand { get; }
+    public ICommand OpenScreenshotsDirCommand { get; }
+    public ICommand ClearCacheCommand { get; }
+    public ICommand RefreshLogCommand { get; }
+    public ICommand ClearLogCommand { get; }
+    public ICommand PickServerCommand { get; }
 
-    // ---------- actions ----------
+    // ---------- helpers ----------
+    private void SetSetting<T>(T newValue, T currentValue, Action<T> apply, [System.Runtime.CompilerServices.CallerMemberName] string? prop = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(newValue, currentValue)) return;
+        apply(newValue);
+        this.RaisePropertyChanged(prop);
+    }
+
+    private void RaiseAllSettingsChanged()
+    {
+        var props = new[]
+        {
+            nameof(RenderDistance), nameof(SimulationDistance), nameof(MaxFps), nameof(MaxFpsDisplay),
+            nameof(GraphicsMode), nameof(Particles), nameof(SmoothLighting),
+            nameof(Clouds), nameof(EntityShadows), nameof(VSync), nameof(MipmapLevels), nameof(BiomeBlend),
+            nameof(EntityDistance), nameof(EntityDistanceDisplay), nameof(ViewBobbing), nameof(GuiScale), nameof(MasterVolume),
+            nameof(OfFastRender), nameof(OfFastMath), nameof(OfSmartAnimations), nameof(OfDynamicFps),
+            nameof(OfLazyChunkLoading), nameof(OfRenderRegions), nameof(OfShowFps),
+            nameof(OfAnimatedWater), nameof(OfAnimatedLava), nameof(OfAnimatedFire), nameof(OfAnimatedPortal),
+            nameof(OfAnimatedRedstone), nameof(OfAnimatedExplosion), nameof(OfAnimatedTextures),
+            nameof(OfAaLevelIndex), nameof(OfAfLevelIndex), nameof(OfChunkUpdatesIndex),
+            nameof(FpsProfileDescription), nameof(ProfileBadge),
+        };
+        foreach (var p in props) this.RaisePropertyChanged(p);
+    }
+
+    private void PickServer(string s)
+    {
+        if (!string.IsNullOrWhiteSpace(s)) AutoConnectServer = s;
+    }
+
+    private static void OpenFolder(string path)
+    {
+        try
+        {
+            Directory.CreateDirectory(path);
+            var psi = new ProcessStartInfo(path) { UseShellExecute = true };
+            Process.Start(psi);
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Error("OpenFolder failed", ex);
+        }
+    }
+
+    private async Task PickJavaAsync()
+    {
+        if (_owner is null) return;
+        var sp = TopLevel.GetTopLevel(_owner)?.StorageProvider;
+        if (sp is null) return;
+        var files = await sp.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Выберите javaw.exe или java",
+            AllowMultiple = false
+        });
+        if (files.Count > 0) CustomJavaPath = files[0].Path.LocalPath;
+    }
+
+    private async Task ClearCacheAsync()
+    {
+        await Task.Run(() =>
+        {
+            try
+            {
+                if (Directory.Exists(Paths.AssetsDir)) Directory.Delete(Paths.AssetsDir, true);
+                if (Directory.Exists(Paths.NativesDir)) Directory.Delete(Paths.NativesDir, true);
+                AppLogger.Info("Cache cleared by user");
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Error("ClearCache failed", ex);
+            }
+        });
+        StatusText = "Кэш ассетов очищен.";
+        RefreshLog();
+    }
+
+    private void RefreshLog()
+    {
+        try
+        {
+            var path = Paths.LogFile;
+            if (!File.Exists(path)) { LogText = "(лог пуст)"; return; }
+            using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var sr = new StreamReader(fs);
+            var all = sr.ReadToEnd();
+            // Показываем последние ~400 строк, чтобы UI не лагал.
+            var lines = all.Split('\n');
+            LogText = lines.Length > 400 ? string.Join("\n", lines[^400..]) : all;
+        }
+        catch (Exception ex)
+        {
+            LogText = "Не удалось прочитать лог: " + ex.Message;
+        }
+    }
+
+    private void ClearLog()
+    {
+        try
+        {
+            if (File.Exists(Paths.LogFile)) File.WriteAllText(Paths.LogFile, "");
+            RefreshLog();
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Error("ClearLog failed", ex);
+        }
+    }
+
+    // ---------- play ----------
     private async Task PlayAsync()
     {
         IsBusy = true;
         try
         {
+            _settings.Save();
             StatusText = "Подготовка…";
             ProgressPercent = 0;
+
+            // Pre-launch
+            if (!string.IsNullOrWhiteSpace(_settings.PreLaunchCommand))
+            {
+                try
+                {
+                    var sh = OperatingSystem.IsWindows() ? "cmd" : "/bin/sh";
+                    var args = OperatingSystem.IsWindows() ? "/c " + _settings.PreLaunchCommand : "-c \"" + _settings.PreLaunchCommand.Replace("\"", "\\\"") + "\"";
+                    var psi = new ProcessStartInfo(sh, args) { UseShellExecute = false, CreateNoWindow = true };
+                    Process.Start(psi)?.WaitForExit(15_000);
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.Warn("Pre-launch failed: " + ex.Message);
+                }
+            }
 
             var progress = new Progress<DownloadProgress>(p =>
             {
@@ -152,15 +582,17 @@ public class MainViewModel : ReactiveObject
             });
 
             // 1) Java
-            var java = await JavaManager.EnsureJavaAsync(progress).ConfigureAwait(false);
+            var java = !string.IsNullOrWhiteSpace(_settings.CustomJavaPath) && File.Exists(_settings.CustomJavaPath)
+                ? _settings.CustomJavaPath
+                : await JavaManager.EnsureJavaAsync(progress).ConfigureAwait(false);
 
-            // 2) Vanilla 1.16.5
+            // 2) Vanilla
             var dl = new MinecraftDownloader("1.16.5");
-            var install = await dl.InstallAsync(progress).ConfigureAwait(false);
+            await dl.InstallAsync(progress).ConfigureAwait(false);
 
             // 3) OptiFine
             string? optifineId = null;
-            if (InstallOptifine)
+            if (_settings.InstallOptifine)
             {
                 try
                 {
@@ -176,27 +608,24 @@ public class MainViewModel : ReactiveObject
 
             // 4) Auth
             AuthAccount account;
-            if (AuthModeIndex == 1)
+            if (_settings.AuthMode == 1)
             {
-                account = AuthService.LoadSaved() ?? AuthService.Offline(Nickname);
+                account = AuthService.LoadSaved() ?? AuthService.Offline(_settings.Nickname);
                 if (account.Type != "msa")
                 {
-                    StatusText = "Войдите через Microsoft на вкладке «Аккаунт».";
+                    StatusText = "Войдите через Microsoft на вкладке «Профиль».";
                     return;
                 }
             }
             else
             {
-                account = AuthService.Offline(Nickname);
+                account = AuthService.Offline(_settings.Nickname);
             }
             AuthService.Save(account);
 
             // 5) Launch
-            var profile = (FpsProfile)FpsProfileIndex;
-            int.TryParse(WindowWidth, out var w);
-            int.TryParse(WindowHeight, out var h);
-            if (w < 320) w = 1280;
-            if (h < 240) h = 720;
+            var w = Math.Max(320, _settings.WindowWidth);
+            var h = Math.Max(240, _settings.WindowHeight);
 
             var opts = new LaunchOptions(
                 VanillaVersionId: "1.16.5",
@@ -205,18 +634,30 @@ public class MainViewModel : ReactiveObject
                 Uuid: account.Uuid,
                 AccessToken: account.AccessToken,
                 UserType: account.Type == "msa" ? "msa" : "legacy",
-                RamMb: RamMb,
+                RamMb: _settings.RamMb,
                 WindowWidth: w,
                 WindowHeight: h,
-                Fullscreen: Fullscreen,
-                UseOptimizedJvm: UseOptimizedFlags,
-                Profile: profile);
+                Fullscreen: _settings.Fullscreen,
+                UseOptimizedJvm: _settings.UseOptimizedFlags,
+                CustomJvmArgs: _settings.CustomJvmArgs,
+                Settings: _settings);
 
             StatusText = "Запуск Minecraft…";
             var p = await GameLauncher.LaunchAsync(java, opts).ConfigureAwait(false);
-            StatusText = "Игра запущена. Удачной игры!";
+            StatusText = "Игра запущена.";
             ProgressPercent = 100;
-            // не ждём выхода — отдадим управление обратно UI
+
+            // post-launch
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                if (_owner is null) return;
+                if (_settings.PostLaunchAction == 1) _owner.WindowState = WindowState.Minimized;
+                if (_settings.PostLaunchAction == 2)
+                {
+                    if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime life)
+                        life.Shutdown();
+                }
+            });
         }
         catch (Exception ex)
         {
@@ -236,12 +677,10 @@ public class MainViewModel : ReactiveObject
             AuthStatus = "Запрашиваем код Microsoft…";
             var code = await AuthService.StartDeviceCodeAsync().ConfigureAwait(false);
             AuthStatus = $"Откройте {code.verification_uri} и введите код: {code.user_code}";
-
-            // открываем браузер
             try
             {
-                var psi = new System.Diagnostics.ProcessStartInfo(code.verification_uri) { UseShellExecute = true };
-                System.Diagnostics.Process.Start(psi);
+                var psi = new ProcessStartInfo(code.verification_uri) { UseShellExecute = true };
+                Process.Start(psi);
             }
             catch { }
 
@@ -265,9 +704,9 @@ public class MainViewModel : ReactiveObject
     {
         try
         {
-            if (System.IO.File.Exists(Paths.AccountsFile))
-                System.IO.File.Delete(Paths.AccountsFile);
+            if (File.Exists(Paths.AccountsFile)) File.Delete(Paths.AccountsFile);
             AuthStatus = "Аккаунт сброшен.";
+            AuthModeIndex = 0;
         }
         catch { }
     }
@@ -278,7 +717,7 @@ public class MainViewModel : ReactiveObject
         {
             try
             {
-                var n = await OnlineService.PingAsync(UserDisplayName).ConfigureAwait(false);
+                var n = await OnlineService.PingAsync(_settings.Nickname).ConfigureAwait(false);
                 await Dispatcher.UIThread.InvokeAsync(() =>
                     OnlineStatusText = n >= 0 ? $"Онлайн: {n}" : "Оффлайн");
             }

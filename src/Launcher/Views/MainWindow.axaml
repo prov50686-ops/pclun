@@ -2,290 +2,729 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:vm="clr-namespace:PcLun.ViewModels"
-        mc:Ignorable="d"
+        xmlns:vm="using:PcLun.ViewModels"
+        mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="800"
         x:Class="PcLun.Views.MainWindow"
         x:DataType="vm:MainViewModel"
         Title="PcLun — Minecraft 1.16.5 OptiFine"
-        Width="1000" Height="640"
-        MinWidth="900" MinHeight="580"
-        WindowStartupLocation="CenterScreen"
-        Background="#000000"
-        TransparencyLevelHint="None">
+        Width="1280" Height="800" MinWidth="1100" MinHeight="700"
+        ExtendClientAreaToDecorationsHint="False"
+        WindowStartupLocation="CenterScreen">
 
-    <Window.Styles>
-        <Style Selector="Border.tab">
-            <Setter Property="Padding" Value="14,8" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="CornerRadius" Value="6" />
-        </Style>
-    </Window.Styles>
+    <Grid ColumnDefinitions="220,*">
 
-    <Design.DataContext>
-        <vm:MainViewModel />
-    </Design.DataContext>
+        <!-- ========== SIDEBAR ========== -->
+        <Border Grid.Column="0" Background="{DynamicResource BgSidebarBrush}"
+                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
+            <DockPanel LastChildFill="True">
 
-    <Grid RowDefinitions="Auto,*,Auto">
-
-        <!-- Header -->
-        <Border Grid.Row="0" Background="#0a0a0a" BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1" Padding="20,14">
-            <Grid ColumnDefinitions="Auto,*,Auto">
-                <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                    <Border Width="32" Height="32" Background="{StaticResource Accent}" CornerRadius="6">
-                        <TextBlock Text="P" FontSize="20" FontWeight="Bold" Foreground="#000" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                    </Border>
-                    <StackPanel>
-                        <TextBlock Text="PcLun" FontSize="18" FontWeight="Bold" />
-                        <TextBlock Text="Minecraft 1.16.5 + OptiFine — Ultra FPS Edition" Classes="subtitle" />
+                <!-- Brand -->
+                <Border DockPanel.Dock="Top" Padding="22,22,22,18">
+                    <StackPanel Spacing="2">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Border Width="32" Height="32" CornerRadius="9"
+                                    Background="{DynamicResource AccentBrush}">
+                                <TextBlock Text="P" Foreground="#000" FontSize="18" FontWeight="Black"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Classes="brand" Text="PcLun" />
+                                <TextBlock Classes="dim" Text="Ultra FPS Edition" />
+                            </StackPanel>
+                        </StackPanel>
                     </StackPanel>
-                </StackPanel>
+                </Border>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
-                    <RadioButton Content="Главная" GroupName="Tabs" IsChecked="{Binding IsHomeTab}" Padding="14,8" />
-                    <RadioButton Content="Настройки" GroupName="Tabs" IsChecked="{Binding IsSettingsTab}" Padding="14,8" />
-                    <RadioButton Content="Аккаунт" GroupName="Tabs" IsChecked="{Binding IsAccountTab}" Padding="14,8" />
-                    <RadioButton Content="О лаунчере" GroupName="Tabs" IsChecked="{Binding IsAboutTab}" Padding="14,8" />
-                </StackPanel>
-
-                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <Ellipse Width="8" Height="8" Fill="{StaticResource Accent}" VerticalAlignment="Center" />
-                        <TextBlock Text="{Binding OnlineStatusText}" Classes="subtitle" VerticalAlignment="Center" />
+                <!-- Footer (online + user) -->
+                <Border DockPanel.Dock="Bottom" Padding="14" BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="0,1,0,0">
+                    <StackPanel Spacing="10">
+                        <Border Classes="pill-success">
+                            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                                <Ellipse Width="6" Height="6" Fill="{DynamicResource SuccessBrush}" />
+                                <TextBlock Text="{Binding OnlineStatusText}" FontSize="11" />
+                            </StackPanel>
+                        </Border>
+                        <Border Classes="field" Padding="10,8">
+                            <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                <Border Width="28" Height="28" CornerRadius="7"
+                                        Background="{DynamicResource AccentBrush}">
+                                    <TextBlock Text="{Binding NicknameInitial}" Foreground="#000"
+                                               FontWeight="Black" FontSize="13"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Nickname}" FontWeight="SemiBold" FontSize="12" />
+                                    <TextBlock Classes="dim" Text="{Binding AccountModeLabel}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
-                    <TextBlock Text="{Binding UserDisplayName}" VerticalAlignment="Center" />
-                </StackPanel>
-            </Grid>
+                </Border>
+
+                <!-- Nav -->
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="14,4,14,14" Spacing="4">
+
+                        <TextBlock Classes="label" Text="Лаунчер" Margin="6,8,6,2" />
+
+                        <RadioButton Classes="nav" GroupName="nav" IsChecked="{Binding IsHomeTab, Mode=TwoWay}">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <TextBlock Text="▶" FontSize="13" Width="16" />
+                                <TextBlock Text="Главная" />
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton Classes="nav" GroupName="nav" IsChecked="{Binding IsServersTab, Mode=TwoWay}">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <TextBlock Text="◇" FontSize="13" Width="16" />
+                                <TextBlock Text="Серверы" />
+                            </StackPanel>
+                        </RadioButton>
+
+                        <TextBlock Classes="label" Text="Настройки" Margin="6,12,6,2" />
+
+                        <RadioButton Classes="nav" GroupName="nav" IsChecked="{Binding IsGraphicsTab, Mode=TwoWay}">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <TextBlock Text="▥" FontSize="13" Width="16" />
+                                <TextBlock Text="Графика и FPS" />
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton Classes="nav" GroupName="nav" IsChecked="{Binding IsOptifineTab, Mode=TwoWay}">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <TextBlock Text="✦" FontSize="13" Width="16" />
+                                <TextBlock Text="OptiFine" />
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton Classes="nav" GroupName="nav" IsChecked="{Binding IsJavaTab, Mode=TwoWay}">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <TextBlock Text="◆" FontSize="13" Width="16" />
+                                <TextBlock Text="Java и JVM" />
+                            </StackPanel>
+                        </RadioButton>
+
+                        <TextBlock Classes="label" Text="Аккаунт" Margin="6,12,6,2" />
+
+                        <RadioButton Classes="nav" GroupName="nav" IsChecked="{Binding IsAccountTab, Mode=TwoWay}">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <TextBlock Text="◉" FontSize="13" Width="16" />
+                                <TextBlock Text="Профиль" />
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton Classes="nav" GroupName="nav" IsChecked="{Binding IsToolsTab, Mode=TwoWay}">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <TextBlock Text="⚙" FontSize="13" Width="16" />
+                                <TextBlock Text="Инструменты" />
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton Classes="nav" GroupName="nav" IsChecked="{Binding IsAboutTab, Mode=TwoWay}">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <TextBlock Text="ⓘ" FontSize="13" Width="16" />
+                                <TextBlock Text="О лаунчере" />
+                            </StackPanel>
+                        </RadioButton>
+                    </StackPanel>
+                </ScrollViewer>
+
+            </DockPanel>
         </Border>
 
-        <!-- Body -->
-        <Grid Grid.Row="1">
+        <!-- ========== CONTENT ========== -->
+        <Grid Grid.Column="1" RowDefinitions="*,Auto">
 
-            <!-- HOME -->
-            <Grid IsVisible="{Binding IsHomeTab}" RowDefinitions="*,Auto" Margin="20">
-                <Grid Grid.Row="0" ColumnDefinitions="2*,*">
+            <!-- Status bar -->
+            <Border Grid.Row="1" Padding="24,14"
+                    Background="{DynamicResource BgPanelBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Classes="cell" Grid.Column="0" Spacing="6">
+                        <TextBlock Text="{Binding StatusText}" FontSize="12" />
+                        <ProgressBar Minimum="0" Maximum="100" Value="{Binding ProgressPercent}"
+                                     IsIndeterminate="{Binding IsIndeterminate}"
+                                     IsVisible="{Binding IsBusy}" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Classes="dim"
+                               Text="PcLun 0.2.0 · Minecraft 1.16.5 + OptiFine HD U G8"
+                               VerticalAlignment="Center" Margin="20,0,0,0" />
+                </Grid>
+            </Border>
 
-                    <Border Grid.Column="0" Classes="card" Margin="0,0,10,0">
-                        <Grid RowDefinitions="Auto,Auto,*,Auto">
-                            <TextBlock Grid.Row="0" Classes="title" Text="Добро пожаловать!" />
-                            <TextBlock Grid.Row="1" Classes="subtitle" TextWrapping="Wrap"
-                                Text="Этот лаунчер автоматически устанавливает Minecraft 1.16.5 с OptiFine и применяет максимальную оптимизацию для слабых ПК. Просто введи ник и нажми «Играть»." />
+            <!-- Content area -->
+            <ScrollViewer Grid.Row="0" Padding="0">
+                <Grid>
+                    <!-- Home -->
+                    <Grid IsVisible="{Binding IsHomeTab}" Margin="36,32,36,28">
+                        <Grid RowDefinitions="Auto,Auto,*">
 
-                            <Border Grid.Row="2" Background="{StaticResource BgSecondary}" CornerRadius="6" Padding="14" Margin="0,16,0,0">
-                                <StackPanel Spacing="10">
-                                    <TextBlock Text="Что включено в Ultra FPS режиме:" FontWeight="SemiBold" />
-                                    <TextBlock Classes="subtitle" Text="• OptiFine HD U G8 + Fast Render + Dynamic FPS" />
-                                    <TextBlock Classes="subtitle" Text="• G1GC с тонко настроенными флагами" />
-                                    <TextBlock Classes="subtitle" Text="• Render distance 4 чанка, минимум частиц, выкл. облака" />
-                                    <TextBlock Classes="subtitle" Text="• Smart Animations off, Fast Math on" />
-                                    <TextBlock Classes="subtitle" Text="• Авто-подбор RAM по размеру системной памяти" />
+                            <!-- Hero -->
+                            <Border Grid.Row="0" Classes="hero">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Classes="cell" Grid.Column="0" Spacing="10">
+                                        <TextBlock Classes="label" Text="Готов играть" />
+                                        <TextBlock Classes="h1" Text="Minecraft 1.16.5" />
+                                        <TextBlock Classes="subtitle" TextWrapping="Wrap"
+                                                   Text="OptiFine HD U G8 · профиль оптимизации применяется автоматически перед каждым запуском." />
+                                        <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,8,0,0">
+                                            <Border Classes="pill">
+                                                <TextBlock Text="{Binding ProfileBadge}" FontSize="11" />
+                                            </Border>
+                                            <Border Classes="pill">
+                                                <TextBlock Text="{Binding RamBadge}" FontSize="11" />
+                                            </Border>
+                                            <Border Classes="pill">
+                                                <TextBlock Text="{Binding ResolutionBadge}" FontSize="11" />
+                                            </Border>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <Button Grid.Column="1" Classes="play"
+                                            Content="{Binding PlayButtonText}"
+                                            Command="{Binding PlayCommand}"
+                                            IsEnabled="{Binding CanPlay}"
+                                            MinWidth="220" VerticalAlignment="Center" />
+                                </Grid>
+                            </Border>
+
+                            <!-- Quick controls -->
+                            <Grid Grid.Row="1" ColumnDefinitions="*,*,*" Margin="0,18,0,0">
+                                <Border Grid.Column="0" Classes="card" Margin="0,0,9,0">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Classes="label" Text="Никнейм" />
+                                        <TextBox Text="{Binding Nickname}" />
+                                        <TextBlock Classes="dim" Text="Используется для офлайн-входа." />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Column="1" Classes="card" Margin="9,0,9,0">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock Classes="label" Text="FPS-профиль" />
+                                        <ComboBox SelectedIndex="{Binding FpsProfileIndex}" HorizontalAlignment="Stretch">
+                                            <ComboBoxItem Content="🥔  Potato — экстрим, для самых слабых ПК" />
+                                            <ComboBoxItem Content="⚡  Ultra FPS — рекомендуется на 2-4 ГБ ОЗУ" />
+                                            <ComboBoxItem Content="◐  Сбалансированный" />
+                                            <ComboBoxItem Content="✦  Качество — для мощных ПК" />
+                                        </ComboBox>
+                                        <TextBlock Classes="dim" Text="{Binding FpsProfileDescription}" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Column="2" Classes="card" Margin="9,0,0,0">
+                                    <StackPanel Spacing="8">
+                                        <DockPanel>
+                                            <TextBlock Classes="label" Text="ОЗУ для игры" DockPanel.Dock="Left" />
+                                            <TextBlock Text="{Binding RamMbDisplay}" Classes="h3"
+                                                       HorizontalAlignment="Right" />
+                                        </DockPanel>
+                                        <Slider Minimum="1024" Maximum="{Binding MaxRamMb}" TickFrequency="512"
+                                                SmallChange="256" LargeChange="512"
+                                                Value="{Binding RamMb}" />
+                                        <TextBlock Classes="dim" Text="{Binding RamHint}" />
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+
+                            <!-- Recent / tips -->
+                            <Grid Grid.Row="2" ColumnDefinitions="*,*" Margin="0,18,0,0">
+                                <Border Grid.Column="0" Classes="card" Margin="0,0,9,0">
+                                    <StackPanel Spacing="10">
+                                        <TextBlock Classes="h3" Text="Что делает Ultra FPS Edition" />
+                                        <Border Classes="divider" />
+                                        <TextBlock Classes="subtitle" TextWrapping="Wrap"
+                                                   Text="• Авто-установка Java 8 (Adoptium) и Minecraft 1.16.5 с проверкой SHA-1." />
+                                        <TextBlock Classes="subtitle" TextWrapping="Wrap"
+                                                   Text="• Установка OptiFine HD U G8 в headless-режиме." />
+                                        <TextBlock Classes="subtitle" TextWrapping="Wrap"
+                                                   Text="• G1GC + Aikar-style JVM-флаги, авто-Xmx по системной RAM." />
+                                        <TextBlock Classes="subtitle" TextWrapping="Wrap"
+                                                   Text="• options.txt + optionsof.txt применяются перед каждым запуском." />
+                                        <TextBlock Classes="subtitle" TextWrapping="Wrap"
+                                                   Text="• Микрофон ассета: SHA-1 проверки и докачка только нехватающего." />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Column="1" Classes="card" Margin="9,0,0,0">
+                                    <StackPanel Spacing="10">
+                                        <TextBlock Classes="h3" Text="Совет дня" />
+                                        <Border Classes="divider" />
+                                        <TextBlock Classes="subtitle" TextWrapping="Wrap"
+                                                   Text="Если FPS меньше 60 — переключись на профиль 🥔 Potato и выставь ОЗУ ровно по реальным потребностям (обычно 2048 МБ хватает с головой). Лишние гигабайты только удлиняют GC-паузы." />
+                                        <TextBlock Classes="subtitle" TextWrapping="Wrap"
+                                                   Text="Если игра вылетает после загрузки — открой Java и JVM, отключи «Использовать оптимизированные флаги», проверь, что Java 8 64-bit." />
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+
+                        </Grid>
+                    </Grid>
+
+                    <!-- Graphics -->
+                    <ScrollViewer IsVisible="{Binding IsGraphicsTab}" Padding="36,32,36,28">
+                        <StackPanel Spacing="16" MaxWidth="1100" HorizontalAlignment="Stretch">
+                            <TextBlock Classes="h1" Text="Графика и FPS" />
+                            <TextBlock Classes="subtitle" Text="Все настройки переписываются в options.txt перед каждым запуском." />
+
+                            <Border Classes="card">
+                                <StackPanel Spacing="14">
+                                    <TextBlock Classes="h3" Text="Базовые" />
+                                    <Border Classes="divider" />
+
+                                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto">
+                                        <StackPanel Classes="cell" Grid.Row="0" Grid.Column="0" Spacing="6">
+                                            <DockPanel>
+                                                <TextBlock Classes="label" Text="Render distance (чанки)" DockPanel.Dock="Left" />
+                                                <TextBlock Text="{Binding RenderDistance}" Classes="h3" HorizontalAlignment="Right" />
+                                            </DockPanel>
+                                            <Slider Minimum="2" Maximum="32" TickFrequency="1" Value="{Binding RenderDistance}" />
+                                        </StackPanel>
+
+                                        <StackPanel Classes="cell" Grid.Row="0" Grid.Column="1" Spacing="6">
+                                            <DockPanel>
+                                                <TextBlock Classes="label" Text="Simulation distance" DockPanel.Dock="Left" />
+                                                <TextBlock Text="{Binding SimulationDistance}" Classes="h3" HorizontalAlignment="Right" />
+                                            </DockPanel>
+                                            <Slider Minimum="2" Maximum="32" TickFrequency="1" Value="{Binding SimulationDistance}" />
+                                        </StackPanel>
+
+                                        <StackPanel Classes="cell" Grid.Row="1" Grid.Column="0" Spacing="6">
+                                            <DockPanel>
+                                                <TextBlock Classes="label" Text="Лимит FPS" DockPanel.Dock="Left" />
+                                                <TextBlock Text="{Binding MaxFpsDisplay}" Classes="h3" HorizontalAlignment="Right" />
+                                            </DockPanel>
+                                            <Slider Minimum="30" Maximum="260" TickFrequency="10" Value="{Binding MaxFps}" />
+                                        </StackPanel>
+
+                                        <StackPanel Classes="cell" Grid.Row="1" Grid.Column="1" Spacing="6">
+                                            <TextBlock Classes="label" Text="Графика" />
+                                            <ComboBox SelectedIndex="{Binding GraphicsMode}" HorizontalAlignment="Stretch">
+                                                <ComboBoxItem Content="Fast — максимум FPS" />
+                                                <ComboBoxItem Content="Fancy" />
+                                                <ComboBoxItem Content="Fabulous" />
+                                            </ComboBox>
+                                        </StackPanel>
+
+                                        <StackPanel Classes="cell" Grid.Row="2" Grid.Column="0" Spacing="6">
+                                            <TextBlock Classes="label" Text="Частицы" />
+                                            <ComboBox SelectedIndex="{Binding Particles}" HorizontalAlignment="Stretch">
+                                                <ComboBoxItem Content="Все" />
+                                                <ComboBoxItem Content="Уменьшено" />
+                                                <ComboBoxItem Content="Минимум" />
+                                            </ComboBox>
+                                        </StackPanel>
+
+                                        <StackPanel Classes="cell" Grid.Row="2" Grid.Column="1" Spacing="6">
+                                            <TextBlock Classes="label" Text="Плавное освещение (AO)" />
+                                            <ComboBox SelectedIndex="{Binding SmoothLighting}" HorizontalAlignment="Stretch">
+                                                <ComboBoxItem Content="Выкл." />
+                                                <ComboBoxItem Content="Минимум" />
+                                                <ComboBoxItem Content="Максимум" />
+                                            </ComboBox>
+                                        </StackPanel>
+                                    </Grid>
                                 </StackPanel>
                             </Border>
 
-                            <StackPanel Grid.Row="3" Margin="0,16,0,0">
-                                <TextBlock Text="{Binding StatusText}" Classes="subtitle" Margin="0,0,0,6" />
-                                <ProgressBar Value="{Binding ProgressPercent}" Maximum="100" IsVisible="{Binding IsBusy}" />
-                            </StackPanel>
-                        </Grid>
-                    </Border>
+                            <Border Classes="card">
+                                <StackPanel Spacing="14">
+                                    <TextBlock Classes="h3" Text="Дополнительно" />
+                                    <Border Classes="divider" />
 
-                    <Border Grid.Column="1" Classes="card" Margin="10,0,0,0">
-                        <StackPanel Spacing="14">
-                            <TextBlock Classes="h2" Text="Игрок" />
-                            <StackPanel Spacing="6">
-                                <TextBlock Classes="subtitle" Text="Никнейм" />
-                                <TextBox Text="{Binding Nickname}" Watermark="Введите ник (3-16 символов)" />
-                            </StackPanel>
+                                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto">
+                                        <StackPanel Classes="cell" Grid.Row="0" Grid.Column="0" Spacing="6">
+                                            <DockPanel>
+                                                <TextBlock Classes="label" Text="Mipmap уровень" DockPanel.Dock="Left" />
+                                                <TextBlock Text="{Binding MipmapLevels}" Classes="h3" HorizontalAlignment="Right" />
+                                            </DockPanel>
+                                            <Slider Minimum="0" Maximum="4" TickFrequency="1" Value="{Binding MipmapLevels}" />
+                                        </StackPanel>
 
-                            <StackPanel Spacing="6">
-                                <TextBlock Classes="subtitle" Text="Тип входа" />
-                                <ComboBox SelectedIndex="{Binding AuthModeIndex}" HorizontalAlignment="Stretch">
-                                    <ComboBoxItem Content="Офлайн (без аккаунта)" />
-                                    <ComboBoxItem Content="Microsoft (премиум)" />
-                                </ComboBox>
-                            </StackPanel>
+                                        <StackPanel Classes="cell" Grid.Row="0" Grid.Column="1" Spacing="6">
+                                            <DockPanel>
+                                                <TextBlock Classes="label" Text="Biome blend" DockPanel.Dock="Left" />
+                                                <TextBlock Text="{Binding BiomeBlend}" Classes="h3" HorizontalAlignment="Right" />
+                                            </DockPanel>
+                                            <Slider Minimum="0" Maximum="14" TickFrequency="1" Value="{Binding BiomeBlend}" />
+                                        </StackPanel>
 
-                            <StackPanel Spacing="6">
-                                <TextBlock Classes="subtitle" Text="Память (RAM)" />
-                                <Grid ColumnDefinitions="*,Auto">
-                                    <Slider Grid.Column="0" Minimum="1024" Maximum="8192" TickFrequency="512"
-                                            Value="{Binding RamMb}" IsSnapToTickEnabled="True" />
-                                    <TextBlock Grid.Column="1" Text="{Binding RamMb, StringFormat='{}{0} МБ'}" Margin="10,0,0,0" VerticalAlignment="Center" />
-                                </Grid>
-                            </StackPanel>
+                                        <StackPanel Classes="cell" Grid.Row="1" Grid.Column="0" Spacing="6">
+                                            <DockPanel>
+                                                <TextBlock Classes="label" Text="Дистанция сущностей" DockPanel.Dock="Left" />
+                                                <TextBlock Text="{Binding EntityDistanceDisplay}" Classes="h3" HorizontalAlignment="Right" />
+                                            </DockPanel>
+                                            <Slider Minimum="0.5" Maximum="5" TickFrequency="0.25" Value="{Binding EntityDistance}" />
+                                        </StackPanel>
 
-                            <Border Background="{StaticResource BgSecondary}" CornerRadius="6" Padding="10">
-                                <StackPanel Spacing="4">
-                                    <TextBlock Text="{Binding RamHint}" Classes="subtitle" TextWrapping="Wrap" />
+                                        <StackPanel Classes="cell" Grid.Row="1" Grid.Column="1" Spacing="6">
+                                            <TextBlock Classes="label" Text="Громкость" />
+                                            <Slider Minimum="0" Maximum="1" TickFrequency="0.05" Value="{Binding MasterVolume}" />
+                                        </StackPanel>
+
+                                        <StackPanel Classes="cell" Grid.Row="2" Grid.Column="0" Spacing="10">
+                                            <CheckBox IsChecked="{Binding Clouds}" Content="Облака" />
+                                            <CheckBox IsChecked="{Binding EntityShadows}" Content="Тени сущностей" />
+                                            <CheckBox IsChecked="{Binding ViewBobbing}" Content="Качание камеры" />
+                                        </StackPanel>
+
+                                        <StackPanel Classes="cell" Grid.Row="2" Grid.Column="1" Spacing="10">
+                                            <CheckBox IsChecked="{Binding VSync}" Content="V-Sync" />
+                                            <CheckBox IsChecked="{Binding Fullscreen}" Content="Полный экран" />
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Classes="card">
+                                <StackPanel Spacing="14">
+                                    <TextBlock Classes="h3" Text="Окно игры" />
+                                    <Border Classes="divider" />
+
+                                    <Grid ColumnDefinitions="*,*,*">
+                                        <StackPanel Classes="cell" Grid.Column="0" Spacing="6">
+                                            <TextBlock Classes="label" Text="Ширина" />
+                                            <TextBox Text="{Binding WindowWidth}" />
+                                        </StackPanel>
+                                        <StackPanel Classes="cell" Grid.Column="1" Spacing="6">
+                                            <TextBlock Classes="label" Text="Высота" />
+                                            <TextBox Text="{Binding WindowHeight}" />
+                                        </StackPanel>
+                                        <StackPanel Classes="cell" Grid.Column="2" Spacing="6">
+                                            <TextBlock Classes="label" Text="Пресет" />
+                                            <ComboBox SelectedIndex="{Binding ResolutionPresetIndex}" HorizontalAlignment="Stretch">
+                                                <ComboBoxItem Content="Свой размер" />
+                                                <ComboBoxItem Content="1280×720 (HD)" />
+                                                <ComboBoxItem Content="1366×768" />
+                                                <ComboBoxItem Content="1600×900" />
+                                                <ComboBoxItem Content="1920×1080 (Full HD)" />
+                                                <ComboBoxItem Content="854×480" />
+                                            </ComboBox>
+                                        </StackPanel>
+                                    </Grid>
                                 </StackPanel>
                             </Border>
                         </StackPanel>
-                    </Border>
+                    </ScrollViewer>
+
+                    <!-- OptiFine -->
+                    <ScrollViewer IsVisible="{Binding IsOptifineTab}" Padding="36,32,36,28">
+                        <StackPanel Spacing="16" MaxWidth="1100" HorizontalAlignment="Stretch">
+                            <TextBlock Classes="h1" Text="OptiFine" />
+                            <TextBlock Classes="subtitle" Text="Применяется через optionsof.txt при каждом запуске." />
+
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <CheckBox IsChecked="{Binding InstallOptifine}"
+                                              Content="Устанавливать OptiFine 1.16.5 HD U G8" FontWeight="SemiBold" />
+                                    <TextBlock Classes="dim" TextWrapping="Wrap"
+                                               Text="Скачивается с optifine.net в headless-режиме при первом запуске. Если выключить — игра запустится в чистом vanilla 1.16.5 без OptiFine-настроек ниже." />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Classes="card">
+                                <StackPanel Spacing="14">
+                                    <TextBlock Classes="h3" Text="FPS-бустеры" />
+                                    <Border Classes="divider" />
+
+                                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto">
+                                        <CheckBox Classes="cell" Grid.Row="0" Grid.Column="0" IsChecked="{Binding OfFastRender}" Content="Fast Render" />
+                                        <CheckBox Classes="cell" Grid.Row="0" Grid.Column="1" IsChecked="{Binding OfFastMath}" Content="Fast Math" />
+                                        <CheckBox Classes="cell" Grid.Row="1" Grid.Column="0" IsChecked="{Binding OfDynamicFps}" Content="Dynamic FPS" />
+                                        <CheckBox Classes="cell" Grid.Row="1" Grid.Column="1" IsChecked="{Binding OfSmartAnimations}" Content="Smart Animations" />
+                                        <CheckBox Classes="cell" Grid.Row="2" Grid.Column="0" IsChecked="{Binding OfLazyChunkLoading}" Content="Lazy Chunk Loading" />
+                                        <CheckBox Classes="cell" Grid.Row="2" Grid.Column="1" IsChecked="{Binding OfRenderRegions}" Content="Render Regions" />
+                                        <CheckBox Classes="cell" Grid.Row="3" Grid.Column="0" IsChecked="{Binding OfShowFps}" Content="Показывать FPS в игре" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Classes="card">
+                                <StackPanel Spacing="14">
+                                    <TextBlock Classes="h3" Text="Анимации (выключи для +FPS)" />
+                                    <Border Classes="divider" />
+
+                                    <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto,Auto">
+                                        <CheckBox Classes="cell" Grid.Row="0" Grid.Column="0" IsChecked="{Binding OfAnimatedWater}" Content="Вода" />
+                                        <CheckBox Classes="cell" Grid.Row="0" Grid.Column="1" IsChecked="{Binding OfAnimatedLava}" Content="Лава" />
+                                        <CheckBox Classes="cell" Grid.Row="0" Grid.Column="2" IsChecked="{Binding OfAnimatedFire}" Content="Огонь" />
+                                        <CheckBox Classes="cell" Grid.Row="1" Grid.Column="0" IsChecked="{Binding OfAnimatedPortal}" Content="Портал" />
+                                        <CheckBox Classes="cell" Grid.Row="1" Grid.Column="1" IsChecked="{Binding OfAnimatedRedstone}" Content="Редстоун" />
+                                        <CheckBox Classes="cell" Grid.Row="1" Grid.Column="2" IsChecked="{Binding OfAnimatedExplosion}" Content="Взрывы" />
+                                        <CheckBox Classes="cell" Grid.Row="2" Grid.Column="0" IsChecked="{Binding OfAnimatedTextures}" Content="Текстуры" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Classes="card">
+                                <StackPanel Spacing="14">
+                                    <TextBlock Classes="h3" Text="Графика" />
+                                    <Border Classes="divider" />
+
+                                    <Grid ColumnDefinitions="*,*,*">
+                                        <StackPanel Classes="cell" Grid.Column="0" Spacing="6">
+                                            <TextBlock Classes="label" Text="Антиалиасинг (AA)" />
+                                            <ComboBox SelectedIndex="{Binding OfAaLevelIndex}" HorizontalAlignment="Stretch">
+                                                <ComboBoxItem Content="OFF" />
+                                                <ComboBoxItem Content="2" />
+                                                <ComboBoxItem Content="4" />
+                                                <ComboBoxItem Content="8" />
+                                                <ComboBoxItem Content="16" />
+                                            </ComboBox>
+                                        </StackPanel>
+                                        <StackPanel Classes="cell" Grid.Column="1" Spacing="6">
+                                            <TextBlock Classes="label" Text="Анизотропная фильтрация (AF)" />
+                                            <ComboBox SelectedIndex="{Binding OfAfLevelIndex}" HorizontalAlignment="Stretch">
+                                                <ComboBoxItem Content="OFF" />
+                                                <ComboBoxItem Content="2" />
+                                                <ComboBoxItem Content="4" />
+                                                <ComboBoxItem Content="8" />
+                                                <ComboBoxItem Content="16" />
+                                            </ComboBox>
+                                        </StackPanel>
+                                        <StackPanel Classes="cell" Grid.Column="2" Spacing="6">
+                                            <TextBlock Classes="label" Text="Chunk updates" />
+                                            <ComboBox SelectedIndex="{Binding OfChunkUpdatesIndex}" HorizontalAlignment="Stretch">
+                                                <ComboBoxItem Content="1 (минимум)" />
+                                                <ComboBoxItem Content="2" />
+                                                <ComboBoxItem Content="3" />
+                                                <ComboBoxItem Content="4" />
+                                                <ComboBoxItem Content="5" />
+                                            </ComboBox>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Java -->
+                    <ScrollViewer IsVisible="{Binding IsJavaTab}" Padding="36,32,36,28">
+                        <StackPanel Spacing="16" MaxWidth="1100" HorizontalAlignment="Stretch">
+                            <TextBlock Classes="h1" Text="Java и JVM" />
+                            <TextBlock Classes="subtitle" Text="По умолчанию используется встроенная Adoptium Temurin JRE 8u." />
+
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h3" Text="Путь к Java" />
+                                    <Border Classes="divider" />
+                                    <TextBlock Classes="dim" Text="Оставь пустым для авто-выбора (встроенная Adoptium → системная java)." />
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBox Grid.Column="0" Text="{Binding CustomJavaPath}"
+                                                 Watermark="C:\Program Files\Java\jdk-8\bin\javaw.exe" />
+                                        <Button Grid.Column="1" Content="Выбрать…" Command="{Binding PickJavaCommand}" />
+                                    </Grid>
+                                    <TextBlock Classes="dim" Text="{Binding ResolvedJavaPath}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h3" Text="JVM-флаги" />
+                                    <Border Classes="divider" />
+                                    <CheckBox IsChecked="{Binding UseOptimizedFlags}"
+                                              Content="Использовать оптимизированные флаги (G1GC, Aikar)" FontWeight="SemiBold" />
+                                    <TextBlock Classes="label" Text="Дополнительные аргументы" Margin="0,8,0,0" />
+                                    <TextBox Text="{Binding CustomJvmArgs}" AcceptsReturn="True"
+                                             Watermark="-XX:+UseShenandoahGC -Dfoo=bar" Height="80" />
+                                    <TextBlock Classes="dim"
+                                               Text="Добавляются к выбранным флагам. Через пробел." />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h3" Text="Поведение лаунчера" />
+                                    <Border Classes="divider" />
+                                    <TextBlock Classes="label" Text="После запуска игры" />
+                                    <ComboBox SelectedIndex="{Binding PostLaunchAction}" HorizontalAlignment="Stretch">
+                                        <ComboBoxItem Content="Оставить лаунчер открытым" />
+                                        <ComboBoxItem Content="Свернуть лаунчер" />
+                                        <ComboBoxItem Content="Закрыть лаунчер" />
+                                    </ComboBox>
+                                    <TextBlock Classes="label" Text="Pre-launch команда (опционально)" Margin="0,8,0,0" />
+                                    <TextBox Text="{Binding PreLaunchCommand}"
+                                             Watermark="cmd /c echo started %DATE% >> log.txt" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Servers -->
+                    <ScrollViewer IsVisible="{Binding IsServersTab}" Padding="36,32,36,28">
+                        <StackPanel Spacing="16" MaxWidth="1100" HorizontalAlignment="Stretch">
+                            <TextBlock Classes="h1" Text="Серверы" />
+                            <TextBlock Classes="subtitle" Text="Авто-подключение при старте игры." />
+
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h3" Text="Авто-подключение" />
+                                    <Border Classes="divider" />
+                                    <TextBlock Classes="label" Text="Адрес сервера (host или host:port)" />
+                                    <TextBox Text="{Binding AutoConnectServer}" Watermark="play.example.net:25565" />
+                                    <TextBlock Classes="dim" Text="Оставь пустым, чтобы попадать в главное меню." />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h3" Text="Быстрый выбор" />
+                                    <Border Classes="divider" />
+                                    <TextBlock Classes="dim" Text="Кнопка подставит адрес в поле выше." />
+                                    <ItemsControl Name="ServerList" ItemsSource="{Binding ServerSuggestions}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel Orientation="Horizontal" />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="x:String">
+                                                <Button Margin="0,0,8,8"
+                                                        Content="{Binding}"
+                                                        Command="{Binding #ServerList.((vm:MainViewModel)DataContext).PickServerCommand}"
+                                                        CommandParameter="{Binding}" />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Account -->
+                    <ScrollViewer IsVisible="{Binding IsAccountTab}" Padding="36,32,36,28">
+                        <StackPanel Spacing="16" MaxWidth="900">
+                            <TextBlock Classes="h1" Text="Профиль" />
+
+                            <Border Classes="card">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <Border Grid.Column="0" Width="64" Height="64" CornerRadius="14"
+                                            Background="{DynamicResource AccentBrush}">
+                                        <TextBlock Text="{Binding NicknameInitial}" Foreground="#000"
+                                                   FontWeight="Black" FontSize="28"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <StackPanel Classes="cell" Grid.Column="1" Margin="20,0,0,0" VerticalAlignment="Center">
+                                        <TextBlock Classes="h2" Text="{Binding Nickname}" />
+                                        <TextBlock Classes="subtitle" Text="{Binding AccountModeLabel}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h3" Text="Microsoft аккаунт" />
+                                    <Border Classes="divider" />
+                                    <TextBlock Classes="subtitle" TextWrapping="Wrap"
+                                               Text="Лаунчер откроет страницу microsoft.com/link, где ты подтвердишь короткий код. Нужна лицензия Minecraft (Java Edition) на этом аккаунте." />
+                                    <Button Classes="primary" Content="Войти через Microsoft"
+                                            Command="{Binding MicrosoftLoginCommand}" HorizontalAlignment="Left" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h3" Text="Тип входа по умолчанию" />
+                                    <Border Classes="divider" />
+                                    <ComboBox SelectedIndex="{Binding AuthModeIndex}" HorizontalAlignment="Stretch">
+                                        <ComboBoxItem Content="Офлайн (любой ник, без премиум-серверов)" />
+                                        <ComboBoxItem Content="Microsoft (премиум-аккаунт)" />
+                                    </ComboBox>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h3" Text="Сброс" />
+                                    <Border Classes="divider" />
+                                    <Button Classes="danger" Content="Сбросить аккаунт"
+                                            Command="{Binding LogoutCommand}" HorizontalAlignment="Left" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Tools -->
+                    <ScrollViewer IsVisible="{Binding IsToolsTab}" Padding="36,32,36,28">
+                        <StackPanel Spacing="16" MaxWidth="1100">
+                            <TextBlock Classes="h1" Text="Инструменты" />
+                            <TextBlock Classes="subtitle" Text="Быстрый доступ к папкам, кэшу и логу." />
+
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h3" Text="Папки" />
+                                    <Border Classes="divider" />
+                                    <Grid ColumnDefinitions="*,*,*">
+                                        <Button Classes="cell" Grid.Column="0" Content="Открыть .minecraft"
+                                                Command="{Binding OpenGameDirCommand}" HorizontalAlignment="Stretch" />
+                                        <Button Classes="cell" Grid.Column="1" Content="Открыть моды"
+                                                Command="{Binding OpenModsDirCommand}" HorizontalAlignment="Stretch" />
+                                        <Button Classes="cell" Grid.Column="2" Content="Открыть скриншоты"
+                                                Command="{Binding OpenScreenshotsDirCommand}" HorizontalAlignment="Stretch" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h3" Text="Кэш" />
+                                    <Border Classes="divider" />
+                                    <TextBlock Classes="subtitle" TextWrapping="Wrap"
+                                               Text="Удаляет загруженные ассеты и нативы. При следующем запуске они скачаются заново. Сейвы и моды НЕ удаляются." />
+                                    <Button Classes="danger" Content="Очистить кэш ассетов"
+                                            Command="{Binding ClearCacheCommand}" HorizontalAlignment="Left" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h3" Text="Лог лаунчера" />
+                                    <Border Classes="divider" />
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBox Grid.Column="0" Text="{Binding LogText}" IsReadOnly="True"
+                                                 AcceptsReturn="True" TextWrapping="NoWrap"
+                                                 FontFamily="Consolas, Menlo, monospace" Height="240" />
+                                        <StackPanel Classes="cell" Grid.Column="1" Spacing="8">
+                                            <Button Content="Обновить" Command="{Binding RefreshLogCommand}" />
+                                            <Button Content="Очистить" Command="{Binding ClearLogCommand}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- About -->
+                    <ScrollViewer IsVisible="{Binding IsAboutTab}" Padding="36,32,36,28">
+                        <StackPanel Spacing="16" MaxWidth="900">
+                            <TextBlock Classes="h1" Text="О лаунчере" />
+
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h2" Text="PcLun" />
+                                    <TextBlock Classes="subtitle" Text="Версия 0.2.0 — Ultra FPS Edition" />
+                                    <Border Classes="divider" />
+                                    <TextBlock Classes="subtitle" TextWrapping="Wrap"
+                                               Text="Минималистичный лаунчер Minecraft 1.16.5 с авто-установкой OptiFine, профилями FPS-оптимизации и онлайн-счётчиком. Открытый исходный код." />
+                                    <TextBlock Classes="dim" Text="github.com/prov50686-ops/pclun" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h3" Text="Системная информация" />
+                                    <Border Classes="divider" />
+                                    <TextBlock Text="{Binding OsName}" />
+                                    <TextBlock Text="{Binding RamInfo}" />
+                                    <TextBlock Text="{Binding ArchInfo}" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
 
                 </Grid>
-
-                <Border Grid.Row="1" Background="{StaticResource BgSecondary}" BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,16,0,0">
-                    <Grid ColumnDefinitions="*,Auto">
-                        <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
-                            <TextBlock Text="Готов играть" FontWeight="SemiBold" />
-                            <TextBlock Classes="subtitle" Text="{Binding ReadyDescription}" />
-                        </StackPanel>
-                        <Button Grid.Column="1" Classes="play"
-                                Content="{Binding PlayButtonText}"
-                                Command="{Binding PlayCommand}"
-                                IsEnabled="{Binding CanPlay}" />
-                    </Grid>
-                </Border>
-            </Grid>
-
-            <!-- SETTINGS -->
-            <ScrollViewer IsVisible="{Binding IsSettingsTab}">
-                <StackPanel Margin="20" Spacing="14" MaxWidth="780" HorizontalAlignment="Stretch">
-                    <TextBlock Classes="title" Text="Настройки" />
-
-                    <Border Classes="card">
-                        <StackPanel Spacing="10">
-                            <TextBlock Classes="h2" Text="FPS-профиль" />
-                            <ComboBox SelectedIndex="{Binding FpsProfileIndex}" HorizontalAlignment="Stretch">
-                                <ComboBoxItem Content="Ultra FPS — для очень слабых ПК" />
-                                <ComboBoxItem Content="Сбалансированный — средняя графика" />
-                                <ComboBoxItem Content="Качество — для мощных ПК" />
-                            </ComboBox>
-                            <TextBlock Classes="subtitle" Text="{Binding FpsProfileDescription}" TextWrapping="Wrap" />
-                        </StackPanel>
-                    </Border>
-
-                    <Border Classes="card">
-                        <StackPanel Spacing="10">
-                            <TextBlock Classes="h2" Text="JVM-флаги (G1GC)" />
-                            <CheckBox Content="Использовать оптимизированные флаги (рекомендуется)" IsChecked="{Binding UseOptimizedFlags}" />
-                            <TextBlock Classes="subtitle" TextWrapping="Wrap"
-                                Text="Включает G1GC с настройками под Minecraft: -XX:+UseG1GC, -XX:G1NewSizePercent=20, -XX:G1ReservePercent=20, -XX:MaxGCPauseMillis=50, -XX:G1HeapRegionSize=32M и др." />
-                        </StackPanel>
-                    </Border>
-
-                    <Border Classes="card">
-                        <StackPanel Spacing="10">
-                            <TextBlock Classes="h2" Text="Папки" />
-                            <Grid ColumnDefinitions="120,*">
-                                <TextBlock Grid.Column="0" Text="Лаунчер:" Classes="subtitle" VerticalAlignment="Center" />
-                                <TextBox Grid.Column="1" Text="{Binding LauncherDir}" IsReadOnly="True" />
-                            </Grid>
-                            <Grid ColumnDefinitions="120,*">
-                                <TextBlock Grid.Column="0" Text="Java:" Classes="subtitle" VerticalAlignment="Center" />
-                                <TextBox Grid.Column="1" Text="{Binding JavaPath}" IsReadOnly="True" />
-                            </Grid>
-                            <Grid ColumnDefinitions="120,*">
-                                <TextBlock Grid.Column="0" Text="Игра:" Classes="subtitle" VerticalAlignment="Center" />
-                                <TextBox Grid.Column="1" Text="{Binding GameDir}" IsReadOnly="True" />
-                            </Grid>
-                        </StackPanel>
-                    </Border>
-
-                    <Border Classes="card">
-                        <StackPanel Spacing="10">
-                            <TextBlock Classes="h2" Text="Окно игры" />
-                            <Grid ColumnDefinitions="120,*">
-                                <TextBlock Grid.Column="0" Text="Ширина:" Classes="subtitle" VerticalAlignment="Center" />
-                                <TextBox Grid.Column="1" Text="{Binding WindowWidth}" />
-                            </Grid>
-                            <Grid ColumnDefinitions="120,*">
-                                <TextBlock Grid.Column="0" Text="Высота:" Classes="subtitle" VerticalAlignment="Center" />
-                                <TextBox Grid.Column="1" Text="{Binding WindowHeight}" />
-                            </Grid>
-                            <CheckBox Content="Полный экран" IsChecked="{Binding Fullscreen}" />
-                        </StackPanel>
-                    </Border>
-
-                    <Border Classes="card">
-                        <StackPanel Spacing="10">
-                            <TextBlock Classes="h2" Text="OptiFine" />
-                            <CheckBox Content="Устанавливать OptiFine 1.16.5 HD U G8 (рекомендуется)" IsChecked="{Binding InstallOptifine}" />
-                        </StackPanel>
-                    </Border>
-
-                </StackPanel>
-            </ScrollViewer>
-
-            <!-- ACCOUNT -->
-            <ScrollViewer IsVisible="{Binding IsAccountTab}">
-                <StackPanel Margin="20" Spacing="14" MaxWidth="600">
-                    <TextBlock Classes="title" Text="Аккаунт" />
-
-                    <Border Classes="card">
-                        <StackPanel Spacing="14">
-                            <TextBlock Classes="h2" Text="Текущий вход" />
-                            <Grid ColumnDefinitions="Auto,*">
-                                <Border Grid.Column="0" Width="48" Height="48" Background="{StaticResource BgSecondary}" CornerRadius="6">
-                                    <TextBlock Text="{Binding NicknameInitial}" FontSize="22" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                </Border>
-                                <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding UserDisplayName}" FontWeight="SemiBold" />
-                                    <TextBlock Classes="subtitle" Text="{Binding AuthModeText}" />
-                                </StackPanel>
-                            </Grid>
-                        </StackPanel>
-                    </Border>
-
-                    <Border Classes="card">
-                        <StackPanel Spacing="10">
-                            <TextBlock Classes="h2" Text="Войти через Microsoft" />
-                            <TextBlock Classes="subtitle" TextWrapping="Wrap"
-                                Text="Лаунчер откроет страницу входа Microsoft, ты подтвердишь код и сможешь играть на премиум-серверах. Лицензия Minecraft (Java Edition) на этом аккаунте обязательна." />
-                            <Button Classes="primary" HorizontalAlignment="Left"
-                                    Content="Войти через Microsoft"
-                                    Command="{Binding MicrosoftLoginCommand}" />
-                            <TextBlock Text="{Binding AuthStatus}" Classes="subtitle" TextWrapping="Wrap" />
-                        </StackPanel>
-                    </Border>
-
-                    <Border Classes="card">
-                        <StackPanel Spacing="10">
-                            <TextBlock Classes="h2" Text="Выход" />
-                            <Button Content="Сбросить аккаунт"
-                                    Command="{Binding LogoutCommand}" HorizontalAlignment="Left" />
-                        </StackPanel>
-                    </Border>
-
-                </StackPanel>
-            </ScrollViewer>
-
-            <!-- ABOUT -->
-            <ScrollViewer IsVisible="{Binding IsAboutTab}">
-                <StackPanel Margin="20" Spacing="14" MaxWidth="600">
-                    <TextBlock Classes="title" Text="О лаунчере" />
-
-                    <Border Classes="card">
-                        <StackPanel Spacing="8">
-                            <TextBlock Text="PcLun" FontSize="20" FontWeight="Bold" />
-                            <TextBlock Classes="subtitle" Text="Версия 0.1.0 — Ultra FPS Edition" />
-                            <TextBlock Classes="subtitle" TextWrapping="Wrap"
-                                Text="Минималистичный лаунчер Minecraft 1.16.5 с авто-установкой OptiFine и максимальной оптимизацией под слабые ПК. Открытый исходный код." />
-                            <TextBlock Classes="subtitle" Text="github.com/prov50686-ops/pclun" />
-                        </StackPanel>
-                    </Border>
-
-                    <Border Classes="card">
-                        <StackPanel Spacing="8">
-                            <TextBlock Classes="h2" Text="Системная информация" />
-                            <TextBlock Text="{Binding OsInfo}" Classes="subtitle" />
-                            <TextBlock Text="{Binding RamInfo}" Classes="subtitle" />
-                            <TextBlock Text="{Binding ArchInfo}" Classes="subtitle" />
-                        </StackPanel>
-                    </Border>
-
-                </StackPanel>
             </ScrollViewer>
 
         </Grid>
-
-        <!-- Footer -->
-        <Border Grid.Row="2" Background="#0a0a0a" BorderBrush="{StaticResource Border}" BorderThickness="0,1,0,0" Padding="20,8">
-            <Grid ColumnDefinitions="*,Auto">
-                <TextBlock Grid.Column="0" Text="{Binding StatusText}" Classes="subtitle" VerticalAlignment="Center" />
-                <TextBlock Grid.Column="1" Text="{Binding VersionInfo}" Classes="subtitle" VerticalAlignment="Center" />
-            </Grid>
-        </Border>
-
     </Grid>
-
 </Window>

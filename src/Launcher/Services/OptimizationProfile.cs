@@ -1,21 +1,22 @@
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 
 namespace PcLun.Services;
 
 public enum FpsProfile
 {
-    UltraFps = 0,   // самый низкий ресурс, максимум FPS
-    Balanced = 1,   // средние настройки
-    Quality = 2     // для мощных ПК
+    Potato = 0,     // 🥔 — для самых-самых слабых ПК (2 чанка, 0 анимаций)
+    UltraFps = 1,   // максимум FPS на слабом ПК
+    Balanced = 2,
+    Quality = 3
 }
 
 public static class OptimizationProfile
 {
-    public static List<string> GetJvmArgs(int ramMb)
+    public static List<string> GetJvmArgs(int ramMb, string customArgs = "")
     {
-        // Aikar-style flags, адаптированные для Minecraft client + low-RAM.
-        // -Xms = -Xmx, чтобы JVM не пересоздавала heap.
+        // Aikar-style flags — оптимально для Minecraft client + low-RAM.
         var args = new List<string>
         {
             $"-Xms{ramMb}M",
@@ -30,178 +31,132 @@ public static class OptimizationProfile
             "-XX:+DisableExplicitGC",
             "-XX:+AlwaysPreTouch",
             "-XX:+UseStringDeduplication",
+            "-XX:+UseFastUnorderedTimeStamps",
+            "-XX:+OptimizeStringConcat",
+            "-XX:+UseCompressedOops",
             "-Dfml.ignoreInvalidMinecraftCertificates=true",
             "-Dfml.ignorePatchDiscrepancies=true",
             "-Dlog4j2.formatMsgNoLookups=true",
             "-Djava.net.preferIPv4Stack=true",
-            "-Dfile.encoding=UTF-8"
+            "-Dfile.encoding=UTF-8",
         };
+
+        if (!string.IsNullOrWhiteSpace(customArgs))
+        {
+            foreach (var token in customArgs.Split(' ', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries))
+            {
+                args.Add(token);
+            }
+        }
         return args;
     }
 
-    public static void WriteOptionsTxt(string gameDir, FpsProfile profile)
+    /// <summary>
+    /// Перезаписывает options.txt и optionsof.txt, основываясь на пользовательских настройках.
+    /// </summary>
+    public static void WriteAll(string gameDir, LauncherSettings s)
+    {
+        Directory.CreateDirectory(gameDir);
+        WriteVanilla(gameDir, s);
+        WriteOptifine(gameDir, s);
+    }
+
+    private static void WriteVanilla(string gameDir, LauncherSettings s)
     {
         var path = Path.Combine(gameDir, "options.txt");
-
-        // Не перезаписываем, если юзер уже что-то поменял
-        if (File.Exists(path)) return;
-
-        Dictionary<string, string> opts = profile switch
+        var ci = CultureInfo.InvariantCulture;
+        var opts = new Dictionary<string, string>
         {
-            FpsProfile.UltraFps => UltraFps(),
-            FpsProfile.Balanced => Balanced(),
-            FpsProfile.Quality => Quality(),
-            _ => UltraFps()
+            { "version", "2586" },
+            { "renderDistance", s.RenderDistance.ToString(ci) },
+            { "simulationDistance", s.SimulationDistance.ToString(ci) },
+            { "graphicsMode", s.GraphicsMode.ToString(ci) },
+            { "ao", s.SmoothLighting.ToString(ci) },
+            { "renderClouds", s.Clouds ? "true" : "false" },
+            { "particles", s.Particles.ToString(ci) },
+            { "fancyGraphics", s.GraphicsMode > 0 ? "true" : "false" },
+            { "useVbo", "true" },
+            { "mipmapLevels", s.MipmapLevels.ToString(ci) },
+            { "biomeBlendRadius", s.BiomeBlend.ToString(ci) },
+            { "maxFps", s.MaxFps.ToString(ci) },
+            { "enableVsync", s.VSync ? "true" : "false" },
+            { "entityShadows", s.EntityShadows ? "true" : "false" },
+            { "entityDistanceScaling", s.EntityDistance.ToString("0.0", ci) },
+            { "fov", "0.0" },
+            { "gamma", "1.0" },
+            { "guiScale", s.GuiScale.ToString(ci) },
+            { "showSubtitles", "false" },
+            { "fullscreen", s.Fullscreen ? "true" : "false" },
+            { "bobView", s.ViewBobbing ? "true" : "false" },
+            { "soundCategory_master", s.MasterVolume.ToString("0.0", ci) },
+            { "lang", "ru_ru" }
         };
 
-        Directory.CreateDirectory(gameDir);
         using var sw = new StreamWriter(path, append: false);
         foreach (var (k, v) in opts) sw.WriteLine($"{k}:{v}");
     }
 
-    public static void WriteOptifineTxt(string gameDir, FpsProfile profile)
+    private static void WriteOptifine(string gameDir, LauncherSettings s)
     {
         var path = Path.Combine(gameDir, "optionsof.txt");
-        if (File.Exists(path)) return;
-
-        Dictionary<string, string> opts = profile switch
+        var ci = CultureInfo.InvariantCulture;
+        var opts = new Dictionary<string, string>
         {
-            FpsProfile.UltraFps => UltraOptifine(),
-            FpsProfile.Balanced => BalancedOptifine(),
-            FpsProfile.Quality => QualityOptifine(),
-            _ => UltraOptifine()
+            { "ofFastRender", s.OfFastRender ? "true" : "false" },
+            { "ofFastMath", s.OfFastMath ? "true" : "false" },
+            { "ofSmartAnimations", s.OfSmartAnimations ? "true" : "false" },
+            { "ofSmoothFps", "false" },
+            { "ofDynamicFps", s.OfDynamicFps ? "true" : "false" },
+            { "ofLazyChunkLoading", s.OfLazyChunkLoading ? "true" : "false" },
+            { "ofRenderRegions", s.OfRenderRegions ? "true" : "false" },
+            { "ofChunkUpdates", s.OfChunkUpdates.ToString(ci) },
+            { "ofAaLevel", s.OfAaLevel.ToString(ci) },
+            { "ofAfLevel", s.OfAfLevel.ToString(ci) },
+            { "ofAnimatedWater", s.OfAnimatedWater ? "0" : "2" },
+            { "ofAnimatedLava", s.OfAnimatedLava ? "0" : "2" },
+            { "ofAnimatedFire", s.OfAnimatedFire ? "true" : "false" },
+            { "ofAnimatedPortal", s.OfAnimatedPortal ? "true" : "false" },
+            { "ofAnimatedRedstone", s.OfAnimatedRedstone ? "true" : "false" },
+            { "ofAnimatedExplosion", s.OfAnimatedExplosion ? "true" : "false" },
+            { "ofAnimatedFlame", s.OfAnimatedFire ? "true" : "false" },
+            { "ofAnimatedSmoke", s.OfAnimatedExplosion ? "true" : "false" },
+            { "ofVoidParticles", "false" },
+            { "ofWaterParticles", "false" },
+            { "ofRainSplash", "false" },
+            { "ofPortalParticles", "false" },
+            { "ofPotionParticles", "false" },
+            { "ofFireworkParticles", "false" },
+            { "ofDrippingWaterLava", "false" },
+            { "ofAnimatedTerrain", s.OfAnimatedTextures ? "true" : "false" },
+            { "ofAnimatedTextures", s.OfAnimatedTextures ? "true" : "false" },
+            { "ofAnimatedItems", s.OfAnimatedTextures ? "true" : "false" },
+            { "ofRandomEntities", "false" },
+            { "ofCustomFonts", "false" },
+            { "ofCustomColors", "false" },
+            { "ofCustomItems", "false" },
+            { "ofCustomEntityModels", "false" },
+            { "ofCustomGuis", "false" },
+            { "ofShowGlErrors", "false" },
+            { "ofShowFps", s.OfShowFps ? "true" : "false" },
+            { "ofTrees", "1" },
+            { "ofRain", "1" },
+            { "ofSky", "false" },
+            { "ofStars", "false" },
+            { "ofSunMoon", "false" },
+            { "ofClouds", s.Clouds ? "1" : "3" }, // 3 = off
+            { "ofCloudsHeight", "0.0" },
+            { "ofTime", "0" },
+            { "ofClearWater", "false" },
+            { "ofBetterGrass", "3" },
+            { "ofBetterSnow", "false" },
+            { "ofTranslucentBlocks", "1" },
+            { "ofDroppedItems", "1" },
+            { "ofVignette", "1" },
+            { "ofFogType", "1" },
+            { "ofFogStart", "0.8" }
         };
 
-        Directory.CreateDirectory(gameDir);
         using var sw = new StreamWriter(path, append: false);
         foreach (var (k, v) in opts) sw.WriteLine($"{k}:{v}");
     }
-
-    // -------- options.txt presets --------
-    private static Dictionary<string, string> UltraFps() => new()
-    {
-        { "version", "2586" },
-        { "renderDistance", "4" },
-        { "graphicsMode", "0" },           // 0=fast, 1=fancy, 2=fabulous
-        { "ao", "0" },                      // ambient occlusion off
-        { "renderClouds", "false" },
-        { "particles", "2" },               // minimal
-        { "fancyGraphics", "false" },
-        { "useVbo", "true" },
-        { "mipmapLevels", "0" },
-        { "biomeBlendRadius", "0" },
-        { "maxFps", "260" },
-        { "enableVsync", "false" },
-        { "entityShadows", "false" },
-        { "entityDistanceScaling", "0.5" },
-        { "fov", "0.0" },
-        { "gamma", "1.0" },
-        { "guiScale", "2" },
-        { "showSubtitles", "false" },
-        { "fullscreen", "false" }
-    };
-
-    private static Dictionary<string, string> Balanced() => new()
-    {
-        { "version", "2586" },
-        { "renderDistance", "8" },
-        { "graphicsMode", "0" },
-        { "ao", "1" },
-        { "renderClouds", "true" },
-        { "particles", "1" },
-        { "fancyGraphics", "false" },
-        { "useVbo", "true" },
-        { "mipmapLevels", "2" },
-        { "biomeBlendRadius", "2" },
-        { "maxFps", "180" },
-        { "enableVsync", "false" },
-        { "entityShadows", "true" },
-        { "entityDistanceScaling", "1.0" },
-        { "fov", "0.5" },
-        { "gamma", "1.0" },
-        { "guiScale", "2" }
-    };
-
-    private static Dictionary<string, string> Quality() => new()
-    {
-        { "version", "2586" },
-        { "renderDistance", "12" },
-        { "graphicsMode", "1" },
-        { "ao", "2" },
-        { "renderClouds", "true" },
-        { "particles", "0" },
-        { "fancyGraphics", "true" },
-        { "useVbo", "true" },
-        { "mipmapLevels", "4" },
-        { "biomeBlendRadius", "5" },
-        { "maxFps", "120" },
-        { "enableVsync", "false" },
-        { "entityShadows", "true" },
-        { "entityDistanceScaling", "1.0" }
-    };
-
-    // -------- optionsof.txt presets (OptiFine) --------
-    private static Dictionary<string, string> UltraOptifine() => new()
-    {
-        { "ofFastRender", "true" },
-        { "ofFastMath", "true" },
-        { "ofSmartAnimations", "false" },
-        { "ofSmoothFps", "false" },
-        { "ofDynamicFps", "true" },
-        { "ofChunkUpdates", "1" },
-        { "ofAoLevel", "0.0" },
-        { "ofAaLevel", "0" },
-        { "ofAfLevel", "1" },
-        { "ofClouds", "3" },                // off
-        { "ofCloudsHeight", "0.0" },
-        { "ofTrees", "1" },
-        { "ofRain", "3" },                  // off
-        { "ofAnimatedWater", "2" },
-        { "ofAnimatedLava", "2" },
-        { "ofAnimatedFire", "false" },
-        { "ofAnimatedPortal", "false" },
-        { "ofAnimatedRedstone", "false" },
-        { "ofAnimatedExplosion", "false" },
-        { "ofAnimatedFlame", "false" },
-        { "ofAnimatedSmoke", "false" },
-        { "ofVoidParticles", "false" },
-        { "ofWaterParticles", "false" },
-        { "ofRainSplash", "false" },
-        { "ofPortalParticles", "false" },
-        { "ofPotionParticles", "false" },
-        { "ofFireworkParticles", "false" },
-        { "ofDroppedItems", "1" },
-        { "ofVignette", "1" },
-        { "ofShowFps", "true" },
-        { "ofRenderRegions", "true" },
-        { "ofLazyChunkLoading", "true" }
-    };
-
-    private static Dictionary<string, string> BalancedOptifine() => new()
-    {
-        { "ofFastRender", "true" },
-        { "ofFastMath", "true" },
-        { "ofSmartAnimations", "true" },
-        { "ofDynamicFps", "true" },
-        { "ofChunkUpdates", "2" },
-        { "ofAoLevel", "1.0" },
-        { "ofClouds", "2" },                // fast
-        { "ofTrees", "2" },                 // fast
-        { "ofRain", "2" },                  // fast
-        { "ofVignette", "1" },
-        { "ofShowFps", "true" }
-    };
-
-    private static Dictionary<string, string> QualityOptifine() => new()
-    {
-        { "ofFastRender", "false" },
-        { "ofFastMath", "false" },
-        { "ofSmartAnimations", "true" },
-        { "ofDynamicFps", "false" },
-        { "ofChunkUpdates", "3" },
-        { "ofAoLevel", "1.0" },
-        { "ofClouds", "0" },
-        { "ofTrees", "3" },
-        { "ofVignette", "1" }
-    };
 }
