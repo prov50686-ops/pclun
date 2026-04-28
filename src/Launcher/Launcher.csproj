@@ -9,7 +9,13 @@
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <RootNamespace>PcLun</RootNamespace>
     <AssemblyName>PcLun</AssemblyName>
-    <Version>0.2.3</Version>
+    <Version>0.2.4</Version>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <AssemblyTitle>PcLun by MrDomik</AssemblyTitle>
+    <Product>PcLun by MrDomik</Product>
+    <Company>MrDomik</Company>
+    <Description>Minecraft 1.16.5 + OptiFine launcher — Ultra FPS Edition by MrDomik</Description>
+    <Copyright>© 2026 MrDomik</Copyright>
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
@@ -17,6 +23,10 @@
     <DebugType>embedded</DebugType>
     <SatelliteResourceLanguages>ru;en</SatelliteResourceLanguages>
   </PropertyGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="app.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.2.2" />
