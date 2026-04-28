@@ -1,0 +1,31 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.userprefs
+.vs/
+.vscode/
+.idea/
+
+# Dotnet build
+artifacts/
+publish/
+
+# Python (backend)
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs / runtime
+*.log
+runtime/
+.minecraft/
+launcher_data/
