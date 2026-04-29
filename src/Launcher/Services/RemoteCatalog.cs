@@ -10,6 +10,8 @@ namespace PcLun.Services;
 /// <summary>
 /// Тонкая обёртка над эндпоинтами бэкенда: news, featured servers, leaderboard, stats.
 /// Все ошибки логируем и возвращаем пустые списки — UI остаётся юзабельным даже без сети.
+/// Используем <see cref="OnlineService.IsAvailable"/> как circuit breaker, чтобы не дёргать
+/// дохлый бэкенд раз в минуту и не засорять лог.
 /// </summary>
 public static class RemoteCatalog
 {
@@ -43,6 +45,7 @@ public static class RemoteCatalog
 
     public static async Task<List<NewsItem>> FetchNewsAsync(CancellationToken ct = default)
     {
+        if (!OnlineService.IsAvailable) return new();
         try
         {
             var resp = await Http.Client.GetFromJsonAsync<NewsResponse>($"{OnlineService.BackendUrl}/news", ct).ConfigureAwait(false);
@@ -50,13 +53,14 @@ public static class RemoteCatalog
         }
         catch (Exception ex)
         {
-            AppLogger.Warn("FetchNews failed: " + ex.Message);
+            OnlineService.MarkUnavailable(ex.Message);
             return new();
         }
     }
 
     public static async Task<List<ServerItem>> FetchServersAsync(CancellationToken ct = default)
     {
+        if (!OnlineService.IsAvailable) return new();
         try
         {
             var resp = await Http.Client.GetFromJsonAsync<ServersResponse>($"{OnlineService.BackendUrl}/servers/featured", ct).ConfigureAwait(false);
@@ -64,13 +68,14 @@ public static class RemoteCatalog
         }
         catch (Exception ex)
         {
-            AppLogger.Warn("FetchServers failed: " + ex.Message);
+            OnlineService.MarkUnavailable(ex.Message);
             return new();
         }
     }
 
     public static async Task<List<LeaderboardItem>> FetchLeaderboardAsync(int limit = 20, CancellationToken ct = default)
     {
+        if (!OnlineService.IsAvailable) return new();
         try
         {
             var resp = await Http.Client.GetFromJsonAsync<LeaderboardResponse>($"{OnlineService.BackendUrl}/leaderboard?limit={limit}", ct).ConfigureAwait(false);
@@ -78,20 +83,21 @@ public static class RemoteCatalog
         }
         catch (Exception ex)
         {
-            AppLogger.Warn("FetchLeaderboard failed: " + ex.Message);
+            OnlineService.MarkUnavailable(ex.Message);
             return new();
         }
     }
 
     public static async Task<StatsResponse?> FetchStatsAsync(CancellationToken ct = default)
     {
+        if (!OnlineService.IsAvailable) return null;
         try
         {
             return await Http.Client.GetFromJsonAsync<StatsResponse>($"{OnlineService.BackendUrl}/stats", ct).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-            AppLogger.Warn("FetchStats failed: " + ex.Message);
+            OnlineService.MarkUnavailable(ex.Message);
             return null;
         }
     }
