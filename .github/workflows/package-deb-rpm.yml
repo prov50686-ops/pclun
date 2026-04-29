@@ -1,0 +1,99 @@
+name: package-deb-rpm
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Publish self-contained linux-x64
+        run: |
+          dotnet publish src/Launcher/Launcher.csproj \
+            -c Release -r linux-x64 --self-contained true \
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
+            -o publish/linux-x64
+
+      - name: Install packaging tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev fakeroot rpm
+
+      - name: Build .deb
+        run: |
+          set -e
+          VER="${GITHUB_REF_NAME#v}"
+          [ -z "$VER" ] && VER="0.4.0"
+          ROOT=pkg/deb/pclun_${VER}_amd64
+          mkdir -p "$ROOT/DEBIAN" "$ROOT/usr/bin" "$ROOT/usr/share/applications" "$ROOT/usr/share/icons/hicolor/256x256/apps"
+          cp publish/linux-x64/PcLun "$ROOT/usr/bin/pclun"
+          chmod +x "$ROOT/usr/bin/pclun"
+          cp src/Launcher/app.ico "$ROOT/usr/share/icons/hicolor/256x256/apps/pclun.png" || true
+          cat > "$ROOT/usr/share/applications/pclun.desktop" <<EOF
+          [Desktop Entry]
+          Name=PcLun
+          Exec=/usr/bin/pclun
+          Icon=pclun
+          Type=Application
+          Categories=Game;
+          EOF
+          cat > "$ROOT/DEBIAN/control" <<EOF
+          Package: pclun
+          Version: $VER
+          Section: games
+          Priority: optional
+          Architecture: amd64
+          Maintainer: MrDomik <noreply@example.com>
+          Description: PcLun — Minecraft 1.16.5 + OptiFine launcher
+          EOF
+          dpkg-deb --build "$ROOT" "publish/pclun_${VER}_amd64.deb"
+
+      - name: Build .rpm
+        run: |
+          set -e
+          VER="${GITHUB_REF_NAME#v}"
+          [ -z "$VER" ] && VER="0.4.0"
+          mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+          cp publish/linux-x64/PcLun ~/rpmbuild/SOURCES/pclun
+          cat > ~/rpmbuild/SPECS/pclun.spec <<EOF
+          Name:           pclun
+          Version:        $VER
+          Release:        1
+          Summary:        PcLun — Minecraft 1.16.5 + OptiFine launcher
+          License:        Proprietary
+          BuildArch:      x86_64
+          %description
+          Avalonia-based launcher for MC 1.16.5 + OptiFine, optimised for weak PCs.
+          %install
+          mkdir -p %{buildroot}/usr/bin
+          cp ~/rpmbuild/SOURCES/pclun %{buildroot}/usr/bin/pclun
+          chmod +x %{buildroot}/usr/bin/pclun
+          %files
+          /usr/bin/pclun
+          EOF
+          rpmbuild -bb ~/rpmbuild/SPECS/pclun.spec
+          cp ~/rpmbuild/RPMS/x86_64/pclun-${VER}-1.x86_64.rpm publish/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-packages
+          path: |
+            publish/*.deb
+            publish/*.rpm
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            publish/*.deb
+            publish/*.rpm

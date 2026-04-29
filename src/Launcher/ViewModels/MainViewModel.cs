@@ -18,7 +18,7 @@ using ReactiveUI;
 
 namespace PcLun.ViewModels;
 
-public class MainViewModel : ReactiveObject
+public partial class MainViewModel : ReactiveObject
 {
     private readonly Window? _owner;
     private readonly LauncherSettings _settings;
@@ -105,6 +105,8 @@ public class MainViewModel : ReactiveObject
 
         _ = StartOnlineLoopAsync();
         _ = InitExtrasAsync();
+
+        InitProSurface();
 
         // Авто-сохранение при изменении любого свойства настроек.
         this.PropertyChanged += (_, e) =>

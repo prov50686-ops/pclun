@@ -130,6 +130,13 @@
                             </StackPanel>
                         </RadioButton>
 
+                        <RadioButton Classes="nav" GroupName="nav" IsChecked="{Binding IsProTab, Mode=TwoWay}">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <TextBlock Text="★" FontSize="13" Width="16" />
+                                <TextBlock Text="Pro" />
+                            </StackPanel>
+                        </RadioButton>
+
                         <RadioButton Classes="nav" GroupName="nav" IsChecked="{Binding IsToolsTab, Mode=TwoWay}">
                             <StackPanel Orientation="Horizontal" Spacing="12">
                                 <TextBlock Text="⚙" FontSize="13" Width="16" />
@@ -1071,6 +1078,315 @@
                                         <Button Content="Экспорт настроек" Command="{Binding ExportSettingsCommand}" />
                                         <Button Content="Импорт настроек" Command="{Binding ImportSettingsCommand}" />
                                     </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Pro: multi-instance, version, Modrinth, server browser, friends, chat, achievements, diagnostics, theme, hosts -->
+                    <ScrollViewer IsVisible="{Binding IsProTab}" Padding="36,32,36,28">
+                        <StackPanel Spacing="14" MaxWidth="1100">
+                            <TextBlock Classes="h1" Text="Pro" />
+                            <TextBlock Classes="subtitle"
+                                       Text="Мульти-инстансы, версии, Modrinth, серверы, друзья, чат, диагностика, темы, хосты, тумблеры." />
+
+                            <!-- Instances -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h2" Text="Инстансы (профили .minecraft)" />
+                                    <ItemsControl ItemsSource="{Binding Instances}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border BorderBrush="#2a2a2e" BorderThickness="0,0,0,1" Padding="0,6">
+                                                    <Grid ColumnDefinitions="*,Auto,Auto">
+                                                        <StackPanel Grid.Column="0">
+                                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                                            <TextBlock Foreground="#888" FontSize="12">
+                                                                <Run Text="{Binding McVersion}" />
+                                                                <Run Text="·" />
+                                                                <Run Text="{Binding Loader}" />
+                                                            </TextBlock>
+                                                        </StackPanel>
+                                                        <Button Grid.Column="2" Content="Удалить"
+                                                                IsVisible="{Binding !IsDefault}"
+                                                                Command="{Binding #Root.((vm:MainViewModel)DataContext).DeleteInstanceCommand}"
+                                                                CommandParameter="{Binding}" />
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBox Width="180" Watermark="имя"
+                                                 Text="{Binding NewInstanceName, Mode=TwoWay}" />
+                                        <ComboBox SelectedItem="{Binding NewInstanceVersion, Mode=TwoWay}"
+                                                  ItemsSource="{Binding AvailableMcVersions}" Width="120" />
+                                        <ComboBox SelectedItem="{Binding NewInstanceLoader, Mode=TwoWay}" Width="120">
+                                            <ComboBoxItem>forge</ComboBoxItem>
+                                            <ComboBoxItem>fabric</ComboBoxItem>
+                                            <ComboBoxItem>optifine</ComboBoxItem>
+                                            <ComboBoxItem>vanilla</ComboBoxItem>
+                                        </ComboBox>
+                                        <Button Content="Создать" Command="{Binding CreateInstanceCommand}" />
+                                        <Button Content="Обновить версии MC" Command="{Binding RefreshVersionsCommand}" />
+                                        <Button Content="Импорт модпака (.zip / .mrpack)" Command="{Binding ImportModpackCommand}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Modrinth browser -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h2" Text="Modrinth — каталог модов" />
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBox Width="300" Watermark="поиск (jei, sodium…)"
+                                                 Text="{Binding ModrinthQuery, Mode=TwoWay}" />
+                                        <ComboBox SelectedItem="{Binding ModrinthMcVersion, Mode=TwoWay}"
+                                                  ItemsSource="{Binding AvailableMcVersions}" Width="120" />
+                                        <ComboBox SelectedItem="{Binding ModrinthLoader, Mode=TwoWay}" Width="120">
+                                            <ComboBoxItem>forge</ComboBoxItem>
+                                            <ComboBoxItem>fabric</ComboBoxItem>
+                                        </ComboBox>
+                                        <Button Content="Поиск" Command="{Binding ModrinthSearchCommand}" />
+                                    </StackPanel>
+                                    <ItemsControl ItemsSource="{Binding ModrinthResults}" MaxHeight="280">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border BorderBrush="#2a2a2e" BorderThickness="0,0,0,1" Padding="0,6">
+                                                    <Grid ColumnDefinitions="*,Auto">
+                                                        <StackPanel Grid.Column="0">
+                                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                                                            <TextBlock Foreground="#888" FontSize="12"
+                                                                       Text="{Binding Description}" TextTrimming="CharacterEllipsis" />
+                                                        </StackPanel>
+                                                        <Button Grid.Column="1" Content="Установить"
+                                                                Command="{Binding #Root.((vm:MainViewModel)DataContext).ModrinthInstallCommand}"
+                                                                CommandParameter="{Binding}" />
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Server browser -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h2" Text="Браузер серверов (MC ping)" />
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBox Width="300" Watermark="play.hypixel.net"
+                                                 Text="{Binding ServerPingInput, Mode=TwoWay}" />
+                                        <Button Content="Пинг" Command="{Binding PingServerCommand}" />
+                                        <Button Content="Пинг рекомендованных" Command="{Binding PingFeaturedCommand}" />
+                                    </StackPanel>
+                                    <ItemsControl ItemsSource="{Binding ServerEntries}" MaxHeight="220">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border BorderBrush="#2a2a2e" BorderThickness="0,0,0,1" Padding="0,6">
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding Display}" FontWeight="SemiBold" />
+                                                        <TextBlock Foreground="#888" FontSize="12" Text="{Binding Motd}" />
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- One-click loader installers -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h2" Text="Установщики (Replay, Sodium, Iris, Vivecraft, Fabric)" />
+                                    <ItemsControl ItemsSource="{Binding Installers}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border BorderBrush="#2a2a2e" BorderThickness="0,0,0,1" Padding="0,6">
+                                                    <Grid ColumnDefinitions="*,Auto">
+                                                        <StackPanel Grid.Column="0">
+                                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                                            <TextBlock Foreground="#888" FontSize="12"
+                                                                       Text="{Binding Description}" TextWrapping="Wrap" />
+                                                        </StackPanel>
+                                                        <Button Grid.Column="1" Content="Установить"
+                                                                Command="{Binding #Root.((vm:MainViewModel)DataContext).InstallExtraCommand}"
+                                                                CommandParameter="{Binding}" />
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Friends -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h2" Text="Друзья" />
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBox Width="220" Watermark="ник друга"
+                                                 Text="{Binding FriendToAdd, Mode=TwoWay}" />
+                                        <Button Content="Добавить" Command="{Binding AddFriendCommand}" />
+                                        <Button Content="Обновить" Command="{Binding RefreshFriendsCommand}" />
+                                    </StackPanel>
+                                    <ItemsControl ItemsSource="{Binding Friends}" MaxHeight="200">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border BorderBrush="#2a2a2e" BorderThickness="0,0,0,1" Padding="0,6">
+                                                    <Grid ColumnDefinitions="*,Auto,Auto">
+                                                        <TextBlock Grid.Column="0" Text="{Binding Name}" />
+                                                        <TextBlock Grid.Column="1" Margin="8,0">
+                                                            <Run Text="{Binding Sessions}" /><Run Text=" сессий" />
+                                                        </TextBlock>
+                                                        <Button Grid.Column="2" Content="Удалить"
+                                                                Command="{Binding #Root.((vm:MainViewModel)DataContext).RemoveFriendCommand}"
+                                                                CommandParameter="{Binding}" />
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Chat -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h2" Text="Чат лаунчера (WebSocket)" />
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <Button Content="Подключиться" Command="{Binding ConnectChatCommand}" />
+                                        <TextBlock VerticalAlignment="Center" Foreground="#888"
+                                                   Text="{Binding ChatStatus}" />
+                                    </StackPanel>
+                                    <ItemsControl ItemsSource="{Binding ChatMessages}" MaxHeight="200">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Display}" FontFamily="Consolas,Courier New,monospace" />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBox Width="500" Watermark="сообщение…"
+                                                 Text="{Binding ChatInput, Mode=TwoWay}" />
+                                        <Button Content="Отправить" Command="{Binding SendChatCommand}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Achievements -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h2" Text="Достижения" />
+                                    <Button Content="Обновить" Command="{Binding RefreshAchievementsCommand}" HorizontalAlignment="Left" />
+                                    <ItemsControl ItemsSource="{Binding Achievements}" MaxHeight="200">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border BorderBrush="#2a2a2e" BorderThickness="0,0,0,1" Padding="0,6">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <TextBlock Text="{Binding Icon}" FontSize="18" />
+                                                        <TextBlock Text="{Binding Title}" />
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Diagnostics -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h2" Text="Диагностика (GPU, температура, моды)" />
+                                    <Button Content="Запустить диагностику" Command="{Binding RunDiagnosticsCommand}" HorizontalAlignment="Left" />
+                                    <Grid ColumnDefinitions="170,*" RowDefinitions="Auto,Auto,Auto,Auto" Margin="0,8,0,0">
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="GPU:" Foreground="#888" />
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding GpuName}" />
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Предупреждение:" Foreground="#888" />
+                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding GpuWarning}" Foreground="#fbbf24" TextWrapping="Wrap" />
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Температура CPU:" Foreground="#888" />
+                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CpuTemp}" />
+                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Конфликты модов:" Foreground="#888" />
+                                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding ModConflictSummary}" />
+                                    </Grid>
+                                    <TextBlock Text="{Binding AntiCheatSummary}" FontStyle="Italic" Foreground="#888" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Cloud backup -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h2" Text="Облачный бэкап последнего снимка" />
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <Button Content="Загрузить" Command="{Binding CloudBackupCommand}" />
+                                        <TextBlock VerticalAlignment="Center" Text="{Binding CloudBackupStatus}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Theme + accent -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h2" Text="Тема и акцент" />
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <ComboBox SelectedIndex="{Binding ThemeMode, Mode=TwoWay}" Width="180">
+                                            <ComboBoxItem>Тёмная</ComboBoxItem>
+                                            <ComboBoxItem>Светлая</ComboBoxItem>
+                                            <ComboBoxItem>Системная</ComboBoxItem>
+                                        </ComboBox>
+                                        <TextBox Width="120" Watermark="#4ADE80"
+                                                 Text="{Binding AccentColor, Mode=TwoWay}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Hosts editor -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h2" Text="Hosts (альтернативные DNS)" />
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <Button Content="Прочитать /etc/hosts" Command="{Binding RefreshHostsCommand}" />
+                                        <Button Content="Сохранить патч (нужно ручное применение)"
+                                                Command="{Binding StageHostsPatchCommand}" />
+                                    </StackPanel>
+                                    <ItemsControl ItemsSource="{Binding HostsMappings}" MaxHeight="160">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock>
+                                                    <Run Text="{Binding Ip}" />
+                                                    <Run Text=" → " />
+                                                    <Run Text="{Binding Host}" />
+                                                </TextBlock>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <TextBlock Text="{Binding HostsPatchInfo}" FontFamily="Consolas,Courier New,monospace"
+                                               Foreground="#888" FontSize="12" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Toggles -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Classes="h2" Text="Переключатели" />
+                                    <CheckBox Content="Стример-режим (скрывать ник, токены, IP серверов)"
+                                              IsChecked="{Binding StreamerModeEnabled, Mode=TwoWay}" />
+                                    <CheckBox Content="Компактный режим окна (520×380)"
+                                              IsChecked="{Binding CompactMode, Mode=TwoWay}" />
+                                    <CheckBox Content="Запускать с системой (autostart)"
+                                              IsChecked="{Binding AutostartWithOs, Mode=TwoWay}" />
+                                    <CheckBox Content="Системные уведомления (toast)"
+                                              IsChecked="{Binding NotificationsEnabled, Mode=TwoWay}" />
+                                    <CheckBox Content="Анонимная телеметрия (краши, FPS, GPU)"
+                                              IsChecked="{Binding TelemetryEnabled, Mode=TwoWay}" />
+                                    <CheckBox Content="Авто-FPS-профиль по железу"
+                                              IsChecked="{Binding AutoFpsProfile, Mode=TwoWay}" />
+                                    <CheckBox Content="Network tuner (TCP/IPv4 JVM-аргументы)"
+                                              IsChecked="{Binding NetworkTunerEnabled, Mode=TwoWay}" />
+                                    <CheckBox Content="Понижать приоритет фоновых процессов (Chrome/Discord)"
+                                              IsChecked="{Binding DemoteBackgroundProcs, Mode=TwoWay}" />
+                                    <CheckBox Content="Скачивать обновления в фоне"
+                                              IsChecked="{Binding BackgroundUpdateEnabled, Mode=TwoWay}" />
                                 </StackPanel>
                             </Border>
                         </StackPanel>

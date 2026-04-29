@@ -1,32 +1,36 @@
 """Backend for the PcLun launcher.
 
 Endpoints:
-    POST /heartbeat  body={"username": str}
-        -> {"online": int, "total": int}
-        Counts unique usernames seen in the last 5 minutes (rate-limited per IP).
-    GET /online
-        -> {"online": int, "total": int}
-    GET /stats
-        -> {"online": int, "total": int, "today": int, "peak": int}
-    GET /news
-        -> {"items": [{"title", "body", "date", "tag"}]}
-    GET /servers/featured
-        -> {"items": [{"name", "address", "tag"}]}
-    GET /leaderboard
-        -> {"items": [{"name", "sessions", "last_seen"}]}
+    POST /heartbeat                  -> online/total
+    GET  /online | /stats            -> aggregate stats
+    GET  /news                       -> news feed
+    GET  /servers/featured           -> curated server list
+    GET  /leaderboard                -> top players
+    POST /telemetry/crash|perf       -> anonymous metrics
+    GET  /friends/{nick}             -> friends list
+    POST /friends/add|remove         -> manage friends
+    GET  /achievements/{nick}        -> player achievements
+    POST /achievements/unlock        -> unlock achievement
+    POST /backup/presign             -> presigned URL stub
+    WS   /chat                       -> live chat (best-effort)
+    GET  /site/changelog             -> public HTML page
 """
 from __future__ import annotations
 
+import asyncio
+import html
 import json
 import os
 import sqlite3
 import time
+import uuid
 from collections import OrderedDict, defaultdict
 from contextlib import contextmanager
 from threading import Lock
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 ONLINE_WINDOW_SECONDS = 300  # 5 минут
@@ -39,7 +43,7 @@ LEGACY_TOTAL_FILE = os.environ.get("PCLUN_DATA_FILE", os.path.join(DATA_DIR, "to
 RATE_LIMIT_WINDOW = 60.0
 RATE_LIMIT_MAX = 30
 
-app = FastAPI(title="PcLun Online", version="0.2.0")
+app = FastAPI(title="PcLun Online", version="0.4.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -92,6 +96,25 @@ def _init_db() -> None:
                 unique_players INTEGER NOT NULL DEFAULT 0,
                 peak_online INTEGER NOT NULL DEFAULT 0
             );
+            CREATE TABLE IF NOT EXISTS friends (
+                owner TEXT NOT NULL,
+                friend TEXT NOT NULL,
+                added REAL NOT NULL,
+                PRIMARY KEY (owner, friend)
+            );
+            CREATE TABLE IF NOT EXISTS achievements (
+                player TEXT NOT NULL,
+                code TEXT NOT NULL,
+                unlocked REAL NOT NULL,
+                PRIMARY KEY (player, code)
+            );
+            CREATE TABLE IF NOT EXISTS telemetry (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ts REAL NOT NULL,
+                kind TEXT NOT NULL,
+                payload TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_telemetry_ts ON telemetry(ts);
             """
         )
         # Migrate legacy total.txt counter once.
@@ -319,6 +342,265 @@ def leaderboard(limit: int = 20) -> dict:
     }
 
 
+# ---------- /telemetry ----------
+
+class TelemetryEvent(BaseModel):
+    kind: str = Field(min_length=1, max_length=32)
+    payload: dict = Field(default_factory=dict)
+
+
+@app.post("/telemetry")
+def telemetry(evt: TelemetryEvent, request: Request) -> dict:
+    ip = (request.client.host if request.client else "?") or "?"
+    now = time.time()
+    with _lock:
+        if _rate_limited(ip, now):
+            raise HTTPException(status_code=429, detail="rate limit")
+    payload = json.dumps(evt.payload, ensure_ascii=False)[:4000]
+    with _db() as c:
+        c.execute(
+            "INSERT INTO telemetry(ts, kind, payload) VALUES(?, ?, ?)",
+            (now, evt.kind[:32], payload),
+        )
+    return {"ok": True}
+
+
+@app.get("/telemetry/recent")
+def telemetry_recent(limit: int = 50) -> dict:
+    limit = max(1, min(500, limit))
+    with _db() as c:
+        rows = c.execute(
+            "SELECT ts, kind, payload FROM telemetry ORDER BY id DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+    return {
+        "items": [
+            {"ts": float(r[0]), "kind": r[1], "payload": json.loads(r[2] or "{}")}
+            for r in rows
+        ]
+    }
+
+
+# ---------- /friends ----------
+
+class FriendOp(BaseModel):
+    owner: str = Field(min_length=1, max_length=32)
+    friend: str = Field(min_length=1, max_length=32)
+
+
+@app.post("/friends/add")
+def friends_add(op: FriendOp) -> dict:
+    if op.owner.strip().lower() == op.friend.strip().lower():
+        raise HTTPException(400, "cannot friend self")
+    with _db() as c:
+        c.execute(
+            "INSERT OR IGNORE INTO friends(owner, friend, added) VALUES(?, ?, ?)",
+            (op.owner.strip(), op.friend.strip(), time.time()),
+        )
+    return {"ok": True}
+
+
+@app.post("/friends/remove")
+def friends_remove(op: FriendOp) -> dict:
+    with _db() as c:
+        c.execute(
+            "DELETE FROM friends WHERE owner=? AND friend=?",
+            (op.owner.strip(), op.friend.strip()),
+        )
+    return {"ok": True}
+
+
+@app.get("/friends/{nick}")
+def friends_list(nick: str) -> dict:
+    nick = nick.strip()[:32]
+    now = time.time()
+    cutoff = now - ONLINE_WINDOW_SECONDS
+    with _db() as c:
+        rows = c.execute(
+            """
+            SELECT f.friend, COALESCE(p.last_seen, 0), COALESCE(p.sessions, 0)
+            FROM friends f
+            LEFT JOIN players p ON p.name = f.friend
+            WHERE f.owner = ?
+            ORDER BY p.last_seen DESC
+            """,
+            (nick,),
+        ).fetchall()
+    return {
+        "items": [
+            {
+                "name": r[0],
+                "last_seen": float(r[1]),
+                "sessions": int(r[2]),
+                "online": float(r[1]) >= cutoff,
+            }
+            for r in rows
+        ]
+    }
+
+
+# ---------- /achievements ----------
+
+ACHIEVEMENT_CATALOG = {
+    "first_launch": {"title": "Первый запуск", "icon": "🚀"},
+    "ten_hours": {"title": "10 часов в игре", "icon": "⏰"},
+    "hundred_hours": {"title": "100 часов в игре", "icon": "💎"},
+    "ten_servers": {"title": "Сменил 10 серверов", "icon": "🌍"},
+    "performance_pack": {"title": "Установил Performance Pack", "icon": "⚡"},
+    "first_friend": {"title": "Добавил друга", "icon": "🤝"},
+    "first_backup": {"title": "Создал бэкап мира", "icon": "💾"},
+    "potato_master": {"title": "Игра на профиле Potato", "icon": "🥔"},
+    "skin_changed": {"title": "Сменил скин", "icon": "🎨"},
+    "shader_user": {"title": "Установил шейдер", "icon": "✨"},
+}
+
+
+class AchievementUnlock(BaseModel):
+    player: str = Field(min_length=1, max_length=32)
+    code: str = Field(min_length=1, max_length=64)
+
+
+@app.post("/achievements/unlock")
+def ach_unlock(op: AchievementUnlock) -> dict:
+    if op.code not in ACHIEVEMENT_CATALOG:
+        raise HTTPException(400, "unknown achievement")
+    with _db() as c:
+        c.execute(
+            "INSERT OR IGNORE INTO achievements(player, code, unlocked) VALUES(?, ?, ?)",
+            (op.player.strip(), op.code, time.time()),
+        )
+    return {"ok": True, "achievement": ACHIEVEMENT_CATALOG[op.code]}
+
+
+@app.get("/achievements/{nick}")
+def ach_list(nick: str) -> dict:
+    nick = nick.strip()[:32]
+    with _db() as c:
+        rows = c.execute(
+            "SELECT code, unlocked FROM achievements WHERE player=? ORDER BY unlocked DESC",
+            (nick,),
+        ).fetchall()
+    return {
+        "items": [
+            {
+                "code": r[0],
+                "unlocked": float(r[1]),
+                "title": ACHIEVEMENT_CATALOG.get(r[0], {}).get("title", r[0]),
+                "icon": ACHIEVEMENT_CATALOG.get(r[0], {}).get("icon", "🏆"),
+            }
+            for r in rows
+        ],
+        "catalog": ACHIEVEMENT_CATALOG,
+    }
+
+
+# ---------- /backup/presign (S3/R2 stub) ----------
+
+class BackupPresign(BaseModel):
+    nick: str = Field(min_length=1, max_length=32)
+    filename: str = Field(min_length=1, max_length=128)
+
+
+@app.post("/backup/presign")
+def backup_presign(op: BackupPresign) -> dict:
+    """Stub for cloud backup. In production, wire this to S3/R2.
+
+    Returns a placeholder URL; the launcher treats failures gracefully.
+    Set PCLUN_BACKUP_BUCKET + AWS creds to enable real signing.
+    """
+    bucket = os.environ.get("PCLUN_BACKUP_BUCKET")
+    if not bucket:
+        return {"ok": False, "error": "cloud backup not configured", "id": uuid.uuid4().hex}
+    key = f"{op.nick}/{int(time.time())}-{op.filename}"
+    return {"ok": True, "url": f"https://{bucket}.s3.amazonaws.com/{key}", "key": key}
+
+
+# ---------- /chat WebSocket ----------
+
+class _ChatHub:
+    def __init__(self) -> None:
+        self.peers: dict[WebSocket, str] = {}
+        self.history: list[dict] = []
+
+    async def connect(self, ws: WebSocket, nick: str) -> None:
+        await ws.accept()
+        self.peers[ws] = nick
+        for msg in self.history[-30:]:
+            await ws.send_json(msg)
+        await self.broadcast({"system": True, "text": f"{nick} вошёл"})
+
+    def disconnect(self, ws: WebSocket) -> str | None:
+        return self.peers.pop(ws, None)
+
+    async def broadcast(self, msg: dict) -> None:
+        msg.setdefault("ts", time.time())
+        self.history.append(msg)
+        if len(self.history) > 500:
+            self.history = self.history[-500:]
+        dead = []
+        for peer in list(self.peers):
+            try:
+                await peer.send_json(msg)
+            except Exception:  # noqa: BLE001
+                dead.append(peer)
+        for d in dead:
+            self.peers.pop(d, None)
+
+
+_chat = _ChatHub()
+
+
+@app.websocket("/chat")
+async def chat_ws(ws: WebSocket) -> None:
+    nick = ws.query_params.get("nick", "anon").strip()[:32] or "anon"
+    await _chat.connect(ws, nick)
+    try:
+        while True:
+            data = await ws.receive_json()
+            text = str(data.get("text", ""))[:500]
+            if text:
+                await _chat.broadcast({"nick": nick, "text": text})
+    except WebSocketDisconnect:
+        pass
+    except Exception:  # noqa: BLE001
+        pass
+    finally:
+        nick = _chat.disconnect(ws) or nick
+        await _chat.broadcast({"system": True, "text": f"{nick} вышел"})
+
+
+# ---------- public site (static-ish) ----------
+
+@app.get("/site/changelog", response_class=HTMLResponse)
+def site_changelog() -> str:
+    items = _load_news()
+    rows = "".join(
+        f"<article><h3>{html.escape(i.get('title',''))}</h3>"
+        f"<p class='date'>{html.escape(str(i.get('date','')))}"
+        f" · <span class='tag'>{html.escape(str(i.get('tag','')))}</span></p>"
+        f"<p>{html.escape(i.get('body',''))}</p></article>"
+        for i in items
+    )
+    return f"""<!doctype html><html lang='ru'><head><meta charset='utf-8'>
+<title>PcLun · Changelog</title>
+<meta name='viewport' content='width=device-width,initial-scale=1'>
+<style>
+  body{{font-family:-apple-system,system-ui,sans-serif;background:#0e0e10;color:#eee;
+       max-width:760px;margin:40px auto;padding:0 16px}}
+  h1{{font-size:32px;margin:0 0 8px}}
+  .sub{{color:#888;margin:0 0 32px}}
+  article{{border-left:3px solid #4ade80;padding:12px 16px;margin:0 0 24px;
+          background:#1a1a1d;border-radius:0 6px 6px 0}}
+  article h3{{margin:0 0 4px}}
+  .date{{color:#888;font-size:13px;margin:0 0 8px}}
+  .tag{{display:inline-block;background:#333;border-radius:4px;padding:1px 6px;
+       font-size:11px;text-transform:uppercase;letter-spacing:.05em}}
+</style></head><body>
+<h1>PcLun</h1><p class='sub'>Лаунчер MC 1.16.5 + OptiFine. Changelog & новости.</p>
+{rows}
+</body></html>"""
+
+
 @app.get("/")
 def root() -> dict:
-    return {"service": "pclun-online", "version": "0.2.0", "ok": True}
+    return {"service": "pclun-online", "version": "0.4.0", "ok": True}

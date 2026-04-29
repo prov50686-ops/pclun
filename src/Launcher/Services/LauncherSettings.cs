@@ -68,6 +68,24 @@ public class LauncherSettings
     [JsonPropertyName("fullscreen")] public bool Fullscreen { get; set; } = false;
     [JsonPropertyName("custom_game_dir")] public string CustomGameDir { get; set; } = "";
 
+    // ---- 0.4 Pro features ----
+    [JsonPropertyName("active_instance")] public string ActiveInstance { get; set; } = "default";
+    [JsonPropertyName("mc_version")] public string McVersion { get; set; } = "1.16.5";
+    [JsonPropertyName("loader")] public string Loader { get; set; } = "optifine";
+    [JsonPropertyName("theme_mode")] public int ThemeMode { get; set; } = 0; // 0=Dark, 1=Light, 2=System
+    [JsonPropertyName("accent_color")] public string AccentColor { get; set; } = "#4ADE80";
+    [JsonPropertyName("streamer_mode")] public bool StreamerMode { get; set; } = false;
+    [JsonPropertyName("compact_mode")] public bool CompactMode { get; set; } = false;
+    [JsonPropertyName("autostart")] public bool AutostartWithOs { get; set; } = false;
+    [JsonPropertyName("notifications_enabled")] public bool NotificationsEnabled { get; set; } = true;
+    [JsonPropertyName("telemetry_enabled")] public bool TelemetryEnabled { get; set; } = false;
+    [JsonPropertyName("auto_fps_profile")] public bool AutoFpsProfile { get; set; } = false;
+    [JsonPropertyName("network_tuner")] public bool NetworkTunerEnabled { get; set; } = false;
+    [JsonPropertyName("demote_background")] public bool DemoteBackgroundProcs { get; set; } = false;
+    [JsonPropertyName("background_update")] public bool BackgroundUpdate { get; set; } = true;
+    [JsonPropertyName("language")] public string Language { get; set; } = "ru"; // ru | en | uk
+    [JsonPropertyName("friend_owner")] public string FriendOwner { get; set; } = "";
+
     // ---- Сохранение / загрузка ----
     public static LauncherSettings Load()
     {
