@@ -1,40 +1,83 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
+    <!--
+        PcLun — Theme 2026
+        Чёрно-белая палитра, мягкая глубина, плотная типографика, ощущение
+        современного «product OS» интерфейса.
+    -->
+
     <Styles.Resources>
         <ResourceDictionary>
-            <!-- Палитра: чёрно-белая с тонкими градациями -->
-            <Color x:Key="BgColor">#0A0A0A</Color>
-            <Color x:Key="BgPanelColor">#111111</Color>
-            <Color x:Key="BgRaisedColor">#161616</Color>
-            <Color x:Key="BgSidebarColor">#070707</Color>
-            <Color x:Key="BorderColor">#222222</Color>
-            <Color x:Key="BorderStrongColor">#2C2C2C</Color>
-            <Color x:Key="TextColor">#F2F2F2</Color>
-            <Color x:Key="TextMutedColor">#9A9A9A</Color>
-            <Color x:Key="TextDimColor">#5C5C5C</Color>
-            <Color x:Key="AccentColor">#FFFFFF</Color>
-            <Color x:Key="AccentDimColor">#D8D8D8</Color>
-            <Color x:Key="DangerColor">#E04D4D</Color>
-            <Color x:Key="SuccessColor">#4DC07A</Color>
+            <!-- ===== Палитра — глубокий монохром ===== -->
+            <Color x:Key="BgColor">#070708</Color>
+            <Color x:Key="BgPanelColor">#0E0E10</Color>
+            <Color x:Key="BgRaisedColor">#16161A</Color>
+            <Color x:Key="BgElevatedColor">#1C1C20</Color>
+            <Color x:Key="BgSidebarColor">#050507</Color>
+            <Color x:Key="BgOverlayColor">#0B0B0D</Color>
 
+            <Color x:Key="BorderColor">#1B1B1F</Color>
+            <Color x:Key="BorderStrongColor">#2A2A30</Color>
+            <Color x:Key="BorderAccentColor">#3D3D44</Color>
+
+            <Color x:Key="TextColor">#F5F5F7</Color>
+            <Color x:Key="TextMutedColor">#9C9CA3</Color>
+            <Color x:Key="TextDimColor">#5A5A60</Color>
+
+            <Color x:Key="AccentColor">#FFFFFF</Color>
+            <Color x:Key="AccentDimColor">#E4E4E7</Color>
+            <Color x:Key="AccentSoftColor">#1F1F23</Color>
+
+            <Color x:Key="DangerColor">#E5484D</Color>
+            <Color x:Key="SuccessColor">#46C77A</Color>
+            <Color x:Key="WarningColor">#E0B341</Color>
+
+            <!-- ===== Brushes ===== -->
             <SolidColorBrush x:Key="BgBrush" Color="{StaticResource BgColor}" />
             <SolidColorBrush x:Key="BgPanelBrush" Color="{StaticResource BgPanelColor}" />
             <SolidColorBrush x:Key="BgRaisedBrush" Color="{StaticResource BgRaisedColor}" />
+            <SolidColorBrush x:Key="BgElevatedBrush" Color="{StaticResource BgElevatedColor}" />
             <SolidColorBrush x:Key="BgSidebarBrush" Color="{StaticResource BgSidebarColor}" />
+            <SolidColorBrush x:Key="BgOverlayBrush" Color="{StaticResource BgOverlayColor}" />
+
             <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}" />
             <SolidColorBrush x:Key="BorderStrongBrush" Color="{StaticResource BorderStrongColor}" />
+            <SolidColorBrush x:Key="BorderAccentBrush" Color="{StaticResource BorderAccentColor}" />
+
             <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}" />
             <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}" />
             <SolidColorBrush x:Key="TextDimBrush" Color="{StaticResource TextDimColor}" />
+
             <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
             <SolidColorBrush x:Key="AccentDimBrush" Color="{StaticResource AccentDimColor}" />
+            <SolidColorBrush x:Key="AccentSoftBrush" Color="{StaticResource AccentSoftColor}" />
+
             <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}" />
             <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}" />
+            <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}" />
+
+            <!-- Градиент для hero / play — чисто B&W, мягкая глубина -->
+            <LinearGradientBrush x:Key="HeroGradientBrush" StartPoint="0%,0%" EndPoint="100%,100%">
+                <GradientStop Color="#1A1A1F" Offset="0" />
+                <GradientStop Color="#0E0E12" Offset="1" />
+            </LinearGradientBrush>
+
+            <LinearGradientBrush x:Key="PlayGradientBrush" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Color="#FFFFFF" Offset="0" />
+                <GradientStop Color="#E8E8EA" Offset="1" />
+            </LinearGradientBrush>
+
+            <LinearGradientBrush x:Key="PlayGradientHoverBrush" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Color="#FFFFFF" Offset="0" />
+                <GradientStop Color="#F4F4F6" Offset="1" />
+            </LinearGradientBrush>
         </ResourceDictionary>
     </Styles.Resources>
 
-    <!-- Window -->
+    <!-- ============================================================
+         Window
+         ============================================================ -->
     <Style Selector="Window">
         <Setter Property="Background" Value="{DynamicResource BgBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
@@ -42,19 +85,24 @@
         <Setter Property="FontSize" Value="13" />
     </Style>
 
+    <!-- ============================================================
+         Typography
+         ============================================================ -->
     <Style Selector="TextBlock">
         <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
     </Style>
 
     <Style Selector="TextBlock.h1">
-        <Setter Property="FontSize" Value="32" />
+        <Setter Property="FontSize" Value="34" />
         <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="LineHeight" Value="40" />
         <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
     </Style>
 
     <Style Selector="TextBlock.h2">
-        <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontSize" Value="20" />
         <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="LineHeight" Value="26" />
         <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
     </Style>
 
@@ -70,9 +118,9 @@
     </Style>
 
     <Style Selector="TextBlock.label">
-        <Setter Property="FontSize" Value="11" />
-        <Setter Property="FontWeight" Value="Medium" />
-        <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+        <Setter Property="FontSize" Value="10" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource TextDimBrush}" />
     </Style>
 
     <Style Selector="TextBlock.dim">
@@ -85,42 +133,61 @@
         <Setter Property="FontWeight" Value="Black" />
     </Style>
 
-    <!-- Panel cards -->
+    <Style Selector="TextBlock.mono">
+        <Setter Property="FontFamily" Value="JetBrains Mono, Consolas, monospace" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+    </Style>
+
+    <!-- ============================================================
+         Surfaces / Cards
+         ============================================================ -->
     <Style Selector="Border.card">
         <Setter Property="Background" Value="{DynamicResource BgPanelBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="14" />
-        <Setter Property="Padding" Value="20" />
+        <Setter Property="CornerRadius" Value="16" />
+        <Setter Property="Padding" Value="22" />
+        <Setter Property="BoxShadow" Value="0 1 0 0 #14000000" />
     </Style>
 
     <Style Selector="Border.card-raised">
         <Setter Property="Background" Value="{DynamicResource BgRaisedBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="14" />
-        <Setter Property="Padding" Value="20" />
+        <Setter Property="CornerRadius" Value="16" />
+        <Setter Property="Padding" Value="22" />
+        <Setter Property="BoxShadow" Value="0 4 24 0 #40000000" />
     </Style>
 
     <Style Selector="Border.hero">
-        <Setter Property="CornerRadius" Value="20" />
-        <Setter Property="Padding" Value="28" />
-        <Setter Property="Background" Value="{DynamicResource BgRaisedBrush}" />
+        <Setter Property="CornerRadius" Value="22" />
+        <Setter Property="Padding" Value="30" />
+        <Setter Property="Background" Value="{DynamicResource HeroGradientBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}" />
         <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BoxShadow" Value="0 12 40 0 #50000000" />
     </Style>
 
     <Style Selector="Border.field">
         <Setter Property="Background" Value="{DynamicResource BgRaisedBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="CornerRadius" Value="12" />
         <Setter Property="Padding" Value="14,10" />
     </Style>
 
     <Style Selector="Border.divider">
         <Setter Property="Height" Value="1" />
         <Setter Property="Background" Value="{DynamicResource BorderBrush}" />
+    </Style>
+
+    <Style Selector="Border.tile">
+        <Setter Property="Background" Value="{DynamicResource BgRaisedBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="Padding" Value="18" />
     </Style>
 
     <!-- Cell padding inside grids (заменяет ColumnSpacing/RowSpacing) -->
@@ -134,11 +201,15 @@
         <Setter Property="Margin" Value="0,0,8,0" />
     </Style>
 
+    <!-- ============================================================
+         Pills / Chips
+         ============================================================ -->
     <Style Selector="Border.pill">
         <Setter Property="CornerRadius" Value="999" />
+        <Setter Property="Background" Value="{DynamicResource BgRaisedBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Padding" Value="10,4" />
+        <Setter Property="Padding" Value="12,5" />
     </Style>
 
     <Style Selector="Border.pill-success">
@@ -146,33 +217,56 @@
         <Setter Property="Background" Value="#0E1F14" />
         <Setter Property="BorderBrush" Value="#1F4D2F" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Padding" Value="10,4" />
+        <Setter Property="Padding" Value="12,5" />
     </Style>
 
-    <!-- Default Button -->
+    <Style Selector="Border.pill-warning">
+        <Setter Property="CornerRadius" Value="999" />
+        <Setter Property="Background" Value="#221A0A" />
+        <Setter Property="BorderBrush" Value="#4A3A12" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="12,5" />
+    </Style>
+
+    <Style Selector="Border.pill-accent">
+        <Setter Property="CornerRadius" Value="999" />
+        <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="12,5" />
+    </Style>
+
+    <Style Selector="Border.pill-accent TextBlock">
+        <Setter Property="Foreground" Value="#000000" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
+    <!-- ============================================================
+         Buttons
+         ============================================================ -->
     <Style Selector="Button">
         <Setter Property="Background" Value="{DynamicResource BgRaisedBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="10" />
-        <Setter Property="Padding" Value="14,9" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="16,10" />
         <Setter Property="FontWeight" Value="Medium" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
     </Style>
 
     <Style Selector="Button:pointerover /template/ ContentPresenter">
-        <Setter Property="Background" Value="#1E1E1E" />
-        <Setter Property="BorderBrush" Value="#3A3A3A" />
+        <Setter Property="Background" Value="{DynamicResource BgElevatedBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderAccentBrush}" />
     </Style>
 
     <Style Selector="Button:pressed /template/ ContentPresenter">
-        <Setter Property="Background" Value="#0A0A0A" />
+        <Setter Property="Background" Value="#0A0A0C" />
     </Style>
 
     <Style Selector="Button:disabled /template/ ContentPresenter">
-        <Setter Property="Background" Value="#101010" />
-        <Setter Property="TextElement.Foreground" Value="#3A3A3A" />
+        <Setter Property="Background" Value="#101012" />
+        <Setter Property="TextElement.Foreground" Value="#3A3A40" />
     </Style>
 
     <!-- Primary white button -->
@@ -181,6 +275,7 @@
         <Setter Property="Foreground" Value="#000000" />
         <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
         <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="CornerRadius" Value="12" />
     </Style>
 
     <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
@@ -190,37 +285,49 @@
     </Style>
 
     <Style Selector="Button.primary:disabled /template/ ContentPresenter">
-        <Setter Property="Background" Value="#444444" />
-        <Setter Property="TextElement.Foreground" Value="#1A1A1A" />
+        <Setter Property="Background" Value="#3A3A40" />
+        <Setter Property="TextElement.Foreground" Value="#1A1A1C" />
     </Style>
 
     <!-- Big Play button -->
     <Style Selector="Button.play">
-        <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+        <Setter Property="Background" Value="{DynamicResource PlayGradientBrush}" />
         <Setter Property="Foreground" Value="#000000" />
-        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+        <Setter Property="BorderBrush" Value="#FFFFFF" />
+        <Setter Property="BorderThickness" Value="1" />
         <Setter Property="FontSize" Value="20" />
         <Setter Property="FontWeight" Value="Black" />
         <Setter Property="Padding" Value="28,18" />
-        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="CornerRadius" Value="16" />
         <Setter Property="MinHeight" Value="64" />
     </Style>
 
     <Style Selector="Button.play:pointerover /template/ ContentPresenter">
-        <Setter Property="Background" Value="{DynamicResource AccentDimBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource AccentDimBrush}" />
+        <Setter Property="Background" Value="{DynamicResource PlayGradientHoverBrush}" />
+        <Setter Property="BorderBrush" Value="#FFFFFF" />
         <Setter Property="TextElement.Foreground" Value="#000000" />
     </Style>
 
+    <Style Selector="Button.play:pressed /template/ ContentPresenter">
+        <Setter Property="Background" Value="#E0E0E2" />
+    </Style>
+
     <Style Selector="Button.play:disabled /template/ ContentPresenter">
-        <Setter Property="Background" Value="#333333" />
-        <Setter Property="TextElement.Foreground" Value="#666666" />
+        <Setter Property="Background" Value="#2A2A30" />
+        <Setter Property="TextElement.Foreground" Value="#5A5A60" />
+        <Setter Property="BorderBrush" Value="#2A2A30" />
     </Style>
 
     <Style Selector="Button.danger">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
         <Setter Property="BorderBrush" Value="#3A1A1A" />
+    </Style>
+
+    <Style Selector="Button.danger:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="#1A0E0E" />
+        <Setter Property="BorderBrush" Value="#5A2424" />
+        <Setter Property="TextElement.Foreground" Value="#FF6B70" />
     </Style>
 
     <Style Selector="Button.ghost">
@@ -230,16 +337,33 @@
     </Style>
 
     <Style Selector="Button.ghost:pointerover /template/ ContentPresenter">
-        <Setter Property="Background" Value="#161616" />
+        <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
         <Setter Property="TextElement.Foreground" Value="{DynamicResource TextBrush}" />
     </Style>
 
-    <!-- Sidebar nav buttons (RadioButton-styled) -->
+    <Style Selector="Button.icon">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+        <Setter Property="Padding" Value="10" />
+        <Setter Property="MinWidth" Value="36" />
+        <Setter Property="MinHeight" Value="36" />
+        <Setter Property="CornerRadius" Value="10" />
+    </Style>
+
+    <Style Selector="Button.icon:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource TextBrush}" />
+    </Style>
+
+    <!-- ============================================================
+         Sidebar nav (RadioButton-styled)
+         ============================================================ -->
     <Style Selector="RadioButton.nav">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="Padding" Value="14,10" />
-        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Padding" Value="14,11" />
+        <Setter Property="CornerRadius" Value="12" />
         <Setter Property="HorizontalContentAlignment" Value="Left" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
@@ -249,26 +373,43 @@
                         Background="{TemplateBinding Background}"
                         BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="{TemplateBinding BorderThickness}"
-                        CornerRadius="10"
+                        CornerRadius="12"
                         Padding="{TemplateBinding Padding}">
-                    <ContentPresenter Name="PART_ContentPresenter"
-                                      Content="{TemplateBinding Content}"
-                                      ContentTemplate="{TemplateBinding ContentTemplate}"
-                                      VerticalAlignment="Center"
-                                      HorizontalAlignment="Left"
-                                      TextElement.Foreground="{TemplateBinding Foreground}"
-                                      TextElement.FontWeight="{TemplateBinding FontWeight}" />
+                    <Grid ColumnDefinitions="3,*">
+                        <Border Name="indicator"
+                                Grid.Column="0"
+                                Width="3"
+                                Margin="-6,4,8,4"
+                                CornerRadius="2"
+                                Background="Transparent" />
+                        <ContentPresenter Grid.Column="1"
+                                          Name="PART_ContentPresenter"
+                                          Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                          VerticalAlignment="Center"
+                                          HorizontalAlignment="Left"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"
+                                          TextElement.FontWeight="{TemplateBinding FontWeight}" />
+                    </Grid>
                 </Border>
             </ControlTemplate>
         </Setter>
     </Style>
 
     <Style Selector="RadioButton.nav:pointerover /template/ Border#root">
-        <Setter Property="Background" Value="#121212" />
+        <Setter Property="Background" Value="#101013" />
+    </Style>
+
+    <Style Selector="RadioButton.nav:pointerover">
+        <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
     </Style>
 
     <Style Selector="RadioButton.nav:checked /template/ Border#root">
-        <Setter Property="Background" Value="#1A1A1A" />
+        <Setter Property="Background" Value="#1A1A1F" />
+    </Style>
+
+    <Style Selector="RadioButton.nav:checked /template/ Border#indicator">
+        <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
     </Style>
 
     <Style Selector="RadioButton.nav:checked">
@@ -276,55 +417,66 @@
         <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
 
-    <!-- TextBox -->
+    <!-- ============================================================
+         TextBox
+         ============================================================ -->
     <Style Selector="TextBox">
         <Setter Property="Background" Value="{DynamicResource BgRaisedBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="CornerRadius" Value="12" />
         <Setter Property="Padding" Value="14,10" />
         <Setter Property="MinHeight" Value="40" />
         <Setter Property="CaretBrush" Value="{DynamicResource AccentBrush}" />
-        <Setter Property="SelectionBrush" Value="#333333" />
+        <Setter Property="SelectionBrush" Value="#2E2E34" />
     </Style>
 
     <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
         <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+        <Setter Property="BorderThickness" Value="1.5" />
     </Style>
 
     <Style Selector="TextBox:pointerover /template/ Border#PART_BorderElement">
-        <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderAccentBrush}" />
     </Style>
 
-    <!-- ComboBox -->
+    <!-- ============================================================
+         ComboBox
+         ============================================================ -->
     <Style Selector="ComboBox">
         <Setter Property="Background" Value="{DynamicResource BgRaisedBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="CornerRadius" Value="12" />
         <Setter Property="Padding" Value="14,8" />
         <Setter Property="MinHeight" Value="40" />
     </Style>
 
     <Style Selector="ComboBox:pointerover /template/ Border#Background">
-        <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderAccentBrush}" />
+    </Style>
+
+    <Style Selector="ComboBox:focus /template/ Border#Background">
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
     </Style>
 
     <Style Selector="ComboBoxItem">
-        <Setter Property="Padding" Value="12,8" />
+        <Setter Property="Padding" Value="14,9" />
     </Style>
 
     <Style Selector="ComboBoxItem:pointerover /template/ ContentPresenter">
-        <Setter Property="Background" Value="#1A1A1A" />
+        <Setter Property="Background" Value="#1A1A1F" />
     </Style>
 
     <Style Selector="ComboBoxItem:selected /template/ ContentPresenter">
-        <Setter Property="Background" Value="#202020" />
+        <Setter Property="Background" Value="#22222A" />
     </Style>
 
-    <!-- Slider -->
+    <!-- ============================================================
+         Slider
+         ============================================================ -->
     <Style Selector="Slider">
         <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
     </Style>
@@ -335,22 +487,30 @@
     </Style>
 
     <Style Selector="Slider:horizontal /template/ RepeatButton">
-        <Setter Property="Background" Value="#1F1F1F" />
+        <Setter Property="Background" Value="#1F1F24" />
     </Style>
 
     <Style Selector="Slider:horizontal /template/ RepeatButton#PART_DecreaseButton">
         <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
     </Style>
 
-    <!-- ProgressBar -->
+    <!-- ============================================================
+         ProgressBar
+         ============================================================ -->
     <Style Selector="ProgressBar">
-        <Setter Property="Background" Value="#1F1F1F" />
+        <Setter Property="Background" Value="#1A1A1F" />
         <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
-        <Setter Property="MinHeight" Value="6" />
-        <Setter Property="CornerRadius" Value="3" />
+        <Setter Property="MinHeight" Value="8" />
+        <Setter Property="CornerRadius" Value="999" />
     </Style>
 
-    <!-- CheckBox -->
+    <Style Selector="ProgressBar /template/ Border#PART_Indicator">
+        <Setter Property="CornerRadius" Value="999" />
+    </Style>
+
+    <!-- ============================================================
+         CheckBox
+         ============================================================ -->
     <Style Selector="CheckBox">
         <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
         <Setter Property="Padding" Value="8,0,0,0" />
@@ -360,7 +520,11 @@
         <Setter Property="Background" Value="{DynamicResource BgRaisedBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="CornerRadius" Value="5" />
+    </Style>
+
+    <Style Selector="CheckBox:pointerover /template/ Border#NormalRectangle">
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderAccentBrush}" />
     </Style>
 
     <Style Selector="CheckBox:checked /template/ Border#NormalRectangle">
@@ -373,12 +537,50 @@
         <Setter Property="Stroke" Value="#000000" />
     </Style>
 
-    <!-- ScrollBar slim -->
+    <!-- ============================================================
+         ScrollBar — slim, modern
+         ============================================================ -->
     <Style Selector="ScrollBar:vertical">
         <Setter Property="Width" Value="8" />
     </Style>
 
     <Style Selector="ScrollBar:horizontal">
         <Setter Property="Height" Value="8" />
+    </Style>
+
+    <Style Selector="ScrollBar /template/ Thumb">
+        <Setter Property="Background" Value="#2A2A30" />
+    </Style>
+
+    <Style Selector="ScrollBar /template/ Thumb:pointerover">
+        <Setter Property="Background" Value="#3A3A42" />
+    </Style>
+
+    <!-- ============================================================
+         ToolTip
+         ============================================================ -->
+    <Style Selector="ToolTip">
+        <Setter Property="Background" Value="{DynamicResource BgElevatedBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Padding" Value="12,8" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+    </Style>
+
+    <!-- ============================================================
+         TabControl (если используется)
+         ============================================================ -->
+    <Style Selector="TabItem">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Padding" Value="14,10" />
+        <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+    </Style>
+
+    <Style Selector="TabItem:selected">
+        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
 </Styles>
