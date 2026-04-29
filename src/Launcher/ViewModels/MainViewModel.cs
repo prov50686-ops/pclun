@@ -173,6 +173,7 @@ public partial class MainViewModel : ReactiveObject
             this.RaisePropertyChanged(nameof(IsAboutTab));
             this.RaisePropertyChanged(nameof(IsContentTab));
             this.RaisePropertyChanged(nameof(IsCommunityTab));
+            this.RaisePropertyChanged(nameof(IsProTab));
         }
     }
 
