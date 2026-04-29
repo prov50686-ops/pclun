@@ -2,30 +2,162 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <title>PcLun — лаунчер MC 1.16.5 + OptiFine</title>
+  <title>PcLun by MrDomik — лёгкий лаунчер Minecraft на русском</title>
+  <meta name="description" content="Бесплатный open-source лаунчер Minecraft для слабых ПК. Полностью на русском. Auto-Java, Ultra FPS-профиль, мульти-инстансы, Modrinth, серверы." />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta property="og:title" content="PcLun by MrDomik — лаунчер Minecraft" />
+  <meta property="og:description" content="Лёгкий лаунчер Minecraft на русском для слабых ПК. Pro Edition v0.4.0." />
+  <meta property="og:image" content="https://raw.githubusercontent.com/prov50686-ops/pclun/devin/initial-launcher/docs/screenshots/01-home.png" />
   <style>
-    body { font-family: -apple-system, system-ui, sans-serif; background: #0e0e10; color: #eee; max-width: 760px; margin: 40px auto; padding: 0 16px; }
-    h1 { font-size: 36px; margin: 0 0 8px; }
-    .sub { color: #888; margin: 0 0 32px; }
-    .links a { display: inline-block; padding: 8px 14px; background: #4ade80; color: #0e0e10; border-radius: 6px; margin: 6px 6px 6px 0; text-decoration: none; font-weight: 600; }
-    .links a.secondary { background: #2a2a2e; color: #eee; }
-    .stats { background: #1a1a1d; padding: 16px; border-radius: 8px; margin: 24px 0; }
-    iframe { border: 0; width: 100%; height: 720px; background: #1a1a1d; border-radius: 8px; }
+    :root {
+      --bg: #0e0e10;
+      --surface: #1a1a1d;
+      --border: #2a2a2e;
+      --text: #f5f5f5;
+      --muted: #9a9a9a;
+      --accent: #4ade80;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, system-ui, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+    }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 48px 24px 64px; }
+    header { text-align: center; margin-bottom: 48px; }
+    .badge { display: inline-block; background: var(--surface); color: var(--accent); border: 1px solid var(--border); border-radius: 999px; padding: 4px 14px; font-size: 13px; font-weight: 600; margin-bottom: 16px; }
+    h1 { font-size: 64px; margin: 0 0 8px; letter-spacing: -1.5px; font-weight: 800; }
+    .tagline { color: var(--muted); font-size: 20px; margin: 0 0 24px; max-width: 560px; margin-left: auto; margin-right: auto; }
+    .cta { display: inline-flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    .btn { display: inline-block; padding: 12px 22px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 15px; transition: transform 0.1s ease; }
+    .btn:hover { transform: translateY(-1px); }
+    .btn.primary { background: var(--accent); color: #06140d; }
+    .btn.secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+    .stats-bar { display: flex; gap: 24px; justify-content: center; margin: 40px 0 56px; flex-wrap: wrap; }
+    .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 28px; text-align: center; min-width: 140px; }
+    .stat-num { font-size: 28px; font-weight: 800; color: var(--accent); }
+    .stat-lbl { font-size: 13px; color: var(--muted); margin-top: 4px; }
+    .section-title { font-size: 28px; margin: 64px 0 24px; font-weight: 700; }
+    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+    .feature { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+    .feature-emoji { font-size: 28px; margin-bottom: 8px; display: block; }
+    .feature-title { font-weight: 700; margin: 0 0 6px; font-size: 16px; }
+    .feature-text { color: var(--muted); font-size: 14px; margin: 0; }
+    .screens { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin: 24px 0; }
+    .screens img { width: 100%; border-radius: 10px; border: 1px solid var(--border); }
+    .changelog-frame { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--surface); }
+    .changelog-frame iframe { border: 0; width: 100%; height: 600px; display: block; }
+    footer { text-align: center; color: var(--muted); font-size: 13px; margin-top: 64px; padding-top: 32px; border-top: 1px solid var(--border); }
+    a { color: var(--accent); }
+    @media (max-width: 600px) {
+      h1 { font-size: 44px; }
+      .tagline { font-size: 17px; }
+    }
   </style>
 </head>
 <body>
-  <h1>PcLun</h1>
-  <p class="sub">Avalonia-лаунчер MC 1.16.5 + OptiFine, оптимизирован для слабых ПК.</p>
-  <div class="links">
-    <a href="https://github.com/prov50686-ops/pclun/releases/latest">Скачать</a>
-    <a class="secondary" href="https://github.com/prov50686-ops/pclun">GitHub</a>
-    <a class="secondary" href="https://pclun-online-trloyqbz.fly.dev/site/changelog">Changelog (live)</a>
+  <div class="wrap">
+    <header>
+      <span class="badge">★ Pro Edition · v0.4.0</span>
+      <h1>PcLun by MrDomik</h1>
+      <p class="tagline">Лёгкий лаунчер Minecraft на русском. Для слабых ПК. Полностью бесплатно и open-source.</p>
+      <div class="cta">
+        <a class="btn primary" href="https://github.com/prov50686-ops/pclun/releases/latest">📥 Скачать v0.4.0</a>
+        <a class="btn secondary" href="https://github.com/prov50686-ops/pclun">⭐ GitHub</a>
+        <a class="btn secondary" href="https://github.com/prov50686-ops/pclun/blob/devin/initial-launcher/CHANGELOG.md">📰 Changelog</a>
+      </div>
+    </header>
+
+    <div class="stats-bar">
+      <div class="stat"><div class="stat-num">31</div><div class="stat-lbl">фич в v0.4.0</div></div>
+      <div class="stat"><div class="stat-num">7</div><div class="stat-lbl">платформ в Releases</div></div>
+      <div class="stat"><div class="stat-num">28/28</div><div class="stat-lbl">тестов зелёные</div></div>
+      <div class="stat"><div class="stat-num">100%</div><div class="stat-lbl">на русском</div></div>
+    </div>
+
+    <h2 class="section-title">Что внутри</h2>
+    <div class="features">
+      <div class="feature">
+        <span class="feature-emoji">🎮</span>
+        <p class="feature-title">Запуск в один клик</p>
+        <p class="feature-text">Minecraft 1.16.5 + OptiFine HD U G8. Авто-установка Java 8 и всех зависимостей.</p>
+      </div>
+      <div class="feature">
+        <span class="feature-emoji">⚡</span>
+        <p class="feature-title">Ultra FPS-профиль</p>
+        <p class="feature-text">Render distance = 4, без облаков, без AO, без частиц. G1GC + Aikar JVM-флаги. Авто-Xmx по системной RAM.</p>
+      </div>
+      <div class="feature">
+        <span class="feature-emoji">🗂</span>
+        <p class="feature-title">Мульти-инстансы</p>
+        <p class="feature-text">Отдельный .minecraft на каждый профиль: vanilla, OptiFine, Forge, тестовый.</p>
+      </div>
+      <div class="feature">
+        <span class="feature-emoji">🎯</span>
+        <p class="feature-title">Любая версия MC</p>
+        <p class="feature-text">1.8.9, 1.12.2, 1.16.5, 1.18.2, 1.19.4, 1.20.1 через Mojang piston-meta.</p>
+      </div>
+      <div class="feature">
+        <span class="feature-emoji">🔍</span>
+        <p class="feature-title">Modrinth-браузер</p>
+        <p class="feature-text">Поиск и установка модов в один клик прямо из лаунчера.</p>
+      </div>
+      <div class="feature">
+        <span class="feature-emoji">🛰</span>
+        <p class="feature-title">Браузер серверов</p>
+        <p class="feature-text">Нативный MC SLP-протокол. Пинг, MOTD, онлайн.</p>
+      </div>
+      <div class="feature">
+        <span class="feature-emoji">👥</span>
+        <p class="feature-title">Друзья + чат</p>
+        <p class="feature-text">WebSocket-чат лаунчера, статус друзей, приглашения.</p>
+      </div>
+      <div class="feature">
+        <span class="feature-emoji">💥</span>
+        <p class="feature-title">Анализатор крашей</p>
+        <p class="feature-text">Парсит crash-reports и сразу подсказывает, что чинить.</p>
+      </div>
+      <div class="feature">
+        <span class="feature-emoji">💾</span>
+        <p class="feature-title">Бэкапы миров</p>
+        <p class="feature-text">Снапшот saves/ в zip + облачный бэкап через S3/R2.</p>
+      </div>
+      <div class="feature">
+        <span class="feature-emoji">🎨</span>
+        <p class="feature-title">Темы</p>
+        <p class="feature-text">Светлая / тёмная / системная + кастомный hex-акцент.</p>
+      </div>
+      <div class="feature">
+        <span class="feature-emoji">🔔</span>
+        <p class="feature-title">Авто-апдейт</p>
+        <p class="feature-text">Скачивает фоном новую версию, ставит при выходе из игры.</p>
+      </div>
+      <div class="feature">
+        <span class="feature-emoji">🛡</span>
+        <p class="feature-title">Без рекламы и трекинга</p>
+        <p class="feature-text">Open-source. Телеметрия выключена по умолчанию.</p>
+      </div>
+    </div>
+
+    <h2 class="section-title">Как выглядит</h2>
+    <div class="screens">
+      <img src="https://raw.githubusercontent.com/prov50686-ops/pclun/devin/initial-launcher/docs/screenshots/01-home.png" alt="Главная" />
+      <img src="https://raw.githubusercontent.com/prov50686-ops/pclun/devin/initial-launcher/docs/screenshots/02-pro.png" alt="Pro" />
+      <img src="https://raw.githubusercontent.com/prov50686-ops/pclun/devin/initial-launcher/docs/screenshots/03-content.png" alt="Контент" />
+      <img src="https://raw.githubusercontent.com/prov50686-ops/pclun/devin/initial-launcher/docs/screenshots/04-community.png" alt="Сообщество" />
+    </div>
+
+    <h2 class="section-title">Live changelog</h2>
+    <div class="changelog-frame">
+      <iframe src="https://pclun-online-trloyqbz.fly.dev/site/changelog" loading="lazy"></iframe>
+    </div>
+
+    <footer>
+      © 2026 MrDomik · собрано на Cloudflare Pages · код на <a href="https://github.com/prov50686-ops/pclun">GitHub</a>.<br>
+      Minecraft и OptiFine — товарные знаки правообладателей. PcLun — независимый open-source проект.
+    </footer>
   </div>
-  <div class="stats">
-    <strong>Live changelog & online</strong>
-    <iframe src="https://pclun-online-trloyqbz.fly.dev/site/changelog"></iframe>
-  </div>
-  <p style="color:#666;font-size:13px">© 2026 MrDomik · собрано на Cloudflare Pages.</p>
 </body>
 </html>
