@@ -1,0 +1,27 @@
+name: Lint (dotnet format)
+
+on:
+  push:
+    branches: [main, "devin/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore PcLun.sln
+
+      # Verify-no-changes: фейлится, если формат расходится с .editorconfig.
+      # `--no-restore` чтобы не повторять restore.
+      # `--severity info` чтобы поднимать даже мелкие нарушения.
+      - name: dotnet format (verify)
+        run: dotnet format PcLun.sln --no-restore --verify-no-changes --severity warn

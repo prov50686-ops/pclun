@@ -15,6 +15,11 @@ public partial class MainWindow : Window
 
     private void OpenGithub_Click(object? sender, RoutedEventArgs e) => OpenUrl("https://github.com/prov50686-ops/pclun");
 
+    private void DismissUpdate_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm) vm.UpdateAvailable = false;
+    }
+
     private static void OpenUrl(string url)
     {
         try

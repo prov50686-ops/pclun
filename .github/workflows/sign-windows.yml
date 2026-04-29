@@ -1,0 +1,52 @@
+# Заглушка для подписи Windows билдов. Не запускается автоматически —
+# вручную через workflow_dispatch и только когда у вас есть сертификат.
+#
+# Чтобы включить:
+#   1. Получите сертификат Authenticode (например, через Azure Trusted Signing
+#      или SSL.com EV / SignPath / Sectigo).
+#   2. Добавьте секрет CODESIGN_PFX (base64 от .pfx) и CODESIGN_PASSWORD.
+#   3. Снимите комментарий со step `Sign EXE` и закомментируйте step "Stub".
+name: Code-sign (Windows)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sign:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Build artefact
+        run: >
+          dotnet publish src/Launcher/Launcher.csproj
+          -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=true -o publish/win-x64
+
+      - name: Stub (no certificate configured)
+        run: echo "TODO Configure CODESIGN_PFX + CODESIGN_PASSWORD secrets to enable signing."
+
+      # - name: Decode certificate
+      #   shell: pwsh
+      #   run: |
+      #     $bytes = [Convert]::FromBase64String("${{ secrets.CODESIGN_PFX }}")
+      #     [IO.File]::WriteAllBytes("$env:RUNNER_TEMP/cert.pfx", $bytes)
+
+      # - name: Sign EXE
+      #   shell: pwsh
+      #   run: |
+      #     $tool = "$env:ProgramFiles(x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe"
+      #     & $tool sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 `
+      #       /f "$env:RUNNER_TEMP/cert.pfx" /p "${{ secrets.CODESIGN_PASSWORD }}" `
+      #       publish/win-x64/PcLun.exe
+
+      # - name: Upload signed
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: PcLun-win-x64-signed
+      #     path: publish/win-x64/PcLun.exe

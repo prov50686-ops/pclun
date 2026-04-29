@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reactive;
 using System.Threading;
 using System.Threading.Tasks;
@@ -69,10 +70,41 @@ public class MainViewModel : ReactiveObject
         ClearLogCommand = ReactiveCommand.Create(ClearLog);
         PickServerCommand = ReactiveCommand.Create<string>(PickServer);
 
+        // ---- 0.3 features: content, backups, community ----
+        CheckUpdateCommand = ReactiveCommand.CreateFromTask(CheckUpdateAsync);
+        OpenLatestReleaseCommand = ReactiveCommand.Create(OpenLatestRelease);
+        ScanCrashesCommand = ReactiveCommand.Create(ScanCrashes);
+        OpenCrashCommand = ReactiveCommand.Create<CrashAnalyzer.CrashEntry?>(OpenCrash);
+        RefreshContentCommand = ReactiveCommand.Create(RefreshContent);
+        ToggleContentCommand = ReactiveCommand.Create<ContentItem?>(ToggleContent);
+        DeleteContentCommand = ReactiveCommand.Create<ContentItem?>(DeleteContent);
+        ImportModCommand = ReactiveCommand.CreateFromTask(() => ImportContentAsync(ContentKind.Mods));
+        ImportShaderCommand = ReactiveCommand.CreateFromTask(() => ImportContentAsync(ContentKind.Shaderpacks));
+        ImportResourcepackCommand = ReactiveCommand.CreateFromTask(() => ImportContentAsync(ContentKind.Resourcepacks));
+        InstallPerformancePackCommand = ReactiveCommand.CreateFromTask(InstallPerformancePackAsync);
+        DownloadShaderCommand = ReactiveCommand.CreateFromTask<ShaderpackInfo?>(DownloadShaderAsync);
+        RefreshBackupsCommand = ReactiveCommand.Create(RefreshBackups);
+        CreateBackupCommand = ReactiveCommand.CreateFromTask(CreateBackupAsync);
+        RestoreBackupCommand = ReactiveCommand.CreateFromTask<BackupInfo?>(RestoreBackupAsync);
+        DeleteBackupCommand = ReactiveCommand.Create<BackupInfo?>(DeleteBackup);
+        OpenBackupsFolderCommand = ReactiveCommand.Create(() => OpenFolder(BackupService.BackupRoot));
+        RefreshScreenshotsCommand = ReactiveCommand.Create(RefreshScreenshots);
+        ExportSettingsCommand = ReactiveCommand.CreateFromTask(ExportSettingsAsync);
+        ImportSettingsCommand = ReactiveCommand.CreateFromTask(ImportSettingsAsync);
+        RefreshLeaderboardCommand = ReactiveCommand.CreateFromTask(RefreshLeaderboardAsync);
+        RefreshNewsCommand = ReactiveCommand.CreateFromTask(RefreshNewsAsync);
+        OpenScreenshotCommand = ReactiveCommand.Create<string?>(OpenScreenshot);
+
         UpdateRamHint();
         RefreshLog();
+        RefreshContent();
+        RefreshBackups();
+        RefreshScreenshots();
+        UpdatePlayerStats();
+        UpdateSkinUrls();
 
         _ = StartOnlineLoopAsync();
+        _ = InitExtrasAsync();
 
         // Авто-сохранение при изменении любого свойства настроек.
         this.PropertyChanged += (_, e) =>
@@ -91,6 +123,8 @@ public class MainViewModel : ReactiveObject
                 case nameof(IsAccountTab):
                 case nameof(IsToolsTab):
                 case nameof(IsAboutTab):
+                case nameof(IsContentTab):
+                case nameof(IsCommunityTab):
                 case nameof(StatusText):
                 case nameof(ProgressPercent):
                 case nameof(IsIndeterminate):
@@ -135,6 +169,8 @@ public class MainViewModel : ReactiveObject
             this.RaisePropertyChanged(nameof(IsAccountTab));
             this.RaisePropertyChanged(nameof(IsToolsTab));
             this.RaisePropertyChanged(nameof(IsAboutTab));
+            this.RaisePropertyChanged(nameof(IsContentTab));
+            this.RaisePropertyChanged(nameof(IsCommunityTab));
         }
     }
 
@@ -146,6 +182,8 @@ public class MainViewModel : ReactiveObject
     public bool IsAccountTab { get => ActiveTab == 5; set { if (value) ActiveTab = 5; } }
     public bool IsToolsTab { get => ActiveTab == 6; set { if (value) ActiveTab = 6; } }
     public bool IsAboutTab { get => ActiveTab == 7; set { if (value) ActiveTab = 7; } }
+    public bool IsContentTab { get => ActiveTab == 8; set { if (value) ActiveTab = 8; } }
+    public bool IsCommunityTab { get => ActiveTab == 9; set { if (value) ActiveTab = 9; } }
 
     // ---------- player ----------
     public string Nickname
@@ -158,6 +196,7 @@ public class MainViewModel : ReactiveObject
             this.RaisePropertyChanged();
             this.RaisePropertyChanged(nameof(NicknameInitial));
             this.RaisePropertyChanged(nameof(CanPlay));
+            UpdateSkinUrls();
         }
     }
 
@@ -440,6 +479,31 @@ public class MainViewModel : ReactiveObject
     public ICommand ClearLogCommand { get; }
     public ICommand PickServerCommand { get; }
 
+    // ---- 0.3 commands ----
+    public ICommand CheckUpdateCommand { get; }
+    public ICommand OpenLatestReleaseCommand { get; }
+    public ICommand ScanCrashesCommand { get; }
+    public ICommand OpenCrashCommand { get; }
+    public ICommand RefreshContentCommand { get; }
+    public ICommand ToggleContentCommand { get; }
+    public ICommand DeleteContentCommand { get; }
+    public ICommand ImportModCommand { get; }
+    public ICommand ImportShaderCommand { get; }
+    public ICommand ImportResourcepackCommand { get; }
+    public ICommand InstallPerformancePackCommand { get; }
+    public ICommand DownloadShaderCommand { get; }
+    public ICommand RefreshBackupsCommand { get; }
+    public ICommand CreateBackupCommand { get; }
+    public ICommand RestoreBackupCommand { get; }
+    public ICommand DeleteBackupCommand { get; }
+    public ICommand OpenBackupsFolderCommand { get; }
+    public ICommand RefreshScreenshotsCommand { get; }
+    public ICommand ExportSettingsCommand { get; }
+    public ICommand ImportSettingsCommand { get; }
+    public ICommand RefreshLeaderboardCommand { get; }
+    public ICommand RefreshNewsCommand { get; }
+    public ICommand OpenScreenshotCommand { get; }
+
     // ---------- helpers ----------
     private void SetSetting<T>(T newValue, T currentValue, Action<T> apply, [System.Runtime.CompilerServices.CallerMemberName] string? prop = null)
     {
@@ -643,9 +707,39 @@ public class MainViewModel : ReactiveObject
                 Settings: _settings);
 
             StatusText = "Запуск Minecraft…";
+            var startedAt = DateTime.UtcNow;
             var p = await GameLauncher.LaunchAsync(java, opts).ConfigureAwait(false);
             StatusText = "Игра запущена.";
             ProgressPercent = 100;
+
+            // Discord RPC: «Играет в Minecraft»
+            try
+            {
+                if (DiscordRpcService.Enabled)
+                {
+                    var detail = string.IsNullOrWhiteSpace(_settings.AutoConnectServer)
+                        ? "Single-player"
+                        : "Сервер: " + _settings.AutoConnectServer;
+                    _ = DiscordRpcService.SetActivityAsync(detail, $"Профиль: {ProfileBadge}");
+                }
+            }
+            catch { }
+
+            // Запоминаем время старта в фоне; когда процесс закончит — запишем в stats.
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await p.WaitForExitAsync().ConfigureAwait(false);
+                    var dur = DateTime.UtcNow - startedAt;
+                    PlayerStatsService.RecordSession(dur, _settings.AutoConnectServer);
+                    await Dispatcher.UIThread.InvokeAsync(UpdatePlayerStats);
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.Warn("Stats record failed: " + ex.Message);
+                }
+            });
 
             // post-launch
             await Dispatcher.UIThread.InvokeAsync(() =>
@@ -724,5 +818,473 @@ public class MainViewModel : ReactiveObject
             catch { }
             await Task.Delay(TimeSpan.FromSeconds(60)).ConfigureAwait(false);
         }
+    }
+
+    // ============================================================================
+    //                       0.3 features (content/community)
+    // ============================================================================
+
+    // ---------- update banner ----------
+    private bool _updateAvailable;
+    public bool UpdateAvailable { get => _updateAvailable; set => this.RaiseAndSetIfChanged(ref _updateAvailable, value); }
+
+    private string _updateBannerText = "";
+    public string UpdateBannerText { get => _updateBannerText; set => this.RaiseAndSetIfChanged(ref _updateBannerText, value); }
+
+    private string _latestReleaseUrl = "https://github.com/prov50686-ops/pclun/releases/latest";
+    public string LatestReleaseUrl { get => _latestReleaseUrl; set => this.RaiseAndSetIfChanged(ref _latestReleaseUrl, value); }
+
+    public string CurrentLauncherVersion => UpdateService.CurrentVersion;
+
+    private async Task CheckUpdateAsync()
+    {
+        StatusText = "Проверка обновлений…";
+        var info = await UpdateService.CheckAsync().ConfigureAwait(false);
+        await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            if (info is null)
+            {
+                StatusText = "Не удалось проверить обновления.";
+                return;
+            }
+            LatestReleaseUrl = info.Url;
+            if (info.IsNewer)
+            {
+                UpdateAvailable = true;
+                UpdateBannerText = $"Доступно обновление: {info.LatestVersion} (у вас {info.CurrentVersion})";
+                StatusText = UpdateBannerText;
+            }
+            else
+            {
+                UpdateAvailable = false;
+                StatusText = $"Установлена последняя версия ({info.CurrentVersion}).";
+            }
+        });
+    }
+
+    private void OpenLatestRelease() => UpdateService.OpenInBrowser(LatestReleaseUrl);
+
+    // ---------- crash analyzer ----------
+    public ObservableCollection<CrashAnalyzer.CrashEntry> CrashEntries { get; } = new();
+
+    private string _crashStatus = "Нажмите «Сканировать», чтобы проверить crash-reports/.";
+    public string CrashStatus { get => _crashStatus; set => this.RaiseAndSetIfChanged(ref _crashStatus, value); }
+
+    private void ScanCrashes()
+    {
+        CrashEntries.Clear();
+        var entries = CrashAnalyzer.ScanRecent();
+        foreach (var e in entries) CrashEntries.Add(e);
+        CrashStatus = entries.Count == 0
+            ? "Крашей не найдено. Можно играть."
+            : $"Найдено {entries.Count} краш-отчётов. Самый свежий: {entries[0].Timestamp:yyyy-MM-dd HH:mm}.";
+    }
+
+    private void OpenCrash(CrashAnalyzer.CrashEntry? entry)
+    {
+        if (entry is null) return;
+        try
+        {
+            Process.Start(new ProcessStartInfo(entry.FullPath) { UseShellExecute = true });
+        }
+        catch (Exception ex) { AppLogger.Warn("OpenCrash failed: " + ex.Message); }
+    }
+
+    // ---------- content (mods/shaders/RP) ----------
+    public ObservableCollection<ContentItem> ModItems { get; } = new();
+    public ObservableCollection<ContentItem> ShaderItems { get; } = new();
+    public ObservableCollection<ContentItem> ResourcePackItems { get; } = new();
+
+    private void RefreshContent()
+    {
+        ReloadInto(ModItems, ContentManager.List(ContentKind.Mods));
+        ReloadInto(ShaderItems, ContentManager.List(ContentKind.Shaderpacks));
+        ReloadInto(ResourcePackItems, ContentManager.List(ContentKind.Resourcepacks));
+    }
+
+    private static void ReloadInto<T>(ObservableCollection<T> coll, IList<T> items)
+    {
+        coll.Clear();
+        foreach (var i in items) coll.Add(i);
+    }
+
+    private void ToggleContent(ContentItem? item)
+    {
+        if (item is null) return;
+        try
+        {
+            ContentManager.Toggle(item);
+            RefreshContent();
+            StatusText = item.Enabled ? $"Отключено: {item.Name}" : $"Включено: {item.Name}";
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Error("Toggle content failed", ex);
+            StatusText = "Ошибка: " + ex.Message;
+        }
+    }
+
+    private void DeleteContent(ContentItem? item)
+    {
+        if (item is null) return;
+        try
+        {
+            ContentManager.Delete(item);
+            RefreshContent();
+            StatusText = $"Удалено: {item.Name}";
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Error("Delete content failed", ex);
+            StatusText = "Ошибка: " + ex.Message;
+        }
+    }
+
+    private async Task ImportContentAsync(ContentKind kind)
+    {
+        if (_owner is null) return;
+        var sp = TopLevel.GetTopLevel(_owner)?.StorageProvider;
+        if (sp is null) return;
+
+        var (title, ext) = kind switch
+        {
+            ContentKind.Mods => ("Выберите mod (.jar)", new[] { "jar" }),
+            ContentKind.Shaderpacks => ("Выберите шейдер (.zip)", new[] { "zip", "jar" }),
+            ContentKind.Resourcepacks => ("Выберите resourcepack (.zip)", new[] { "zip" }),
+            _ => ("Файл", new[] { "*" })
+        };
+
+        var picked = await sp.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = title,
+            AllowMultiple = true,
+            FileTypeFilter = new[]
+            {
+                new FilePickerFileType("Поддерживаемые") { Patterns = ext.Select(e => "*." + e).ToList() }
+            }
+        });
+        if (picked is null || picked.Count == 0) return;
+
+        try
+        {
+            foreach (var f in picked)
+                ContentManager.ImportFile(f.Path.LocalPath, kind);
+            RefreshContent();
+            StatusText = $"Добавлено: {picked.Count}";
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Error("Import content failed", ex);
+            StatusText = "Ошибка: " + ex.Message;
+        }
+    }
+
+    // ---------- performance modpack + shaders catalog ----------
+    public IReadOnlyList<ModInfo> PerformanceMods => PerformanceModpack.Mods;
+    public IReadOnlyList<ShaderpackInfo> ShaderCatalog => ShaderpackCatalog.Items;
+
+    private async Task InstallPerformancePackAsync()
+    {
+        IsBusy = true;
+        try
+        {
+            var progress = new Progress<DownloadProgress>(p => StatusText = p.Status);
+            await PerformanceModpack.DownloadModsAsync(progress).ConfigureAwait(false);
+            var forge = await PerformanceModpack.EnsureForgeInstallerAsync(progress).ConfigureAwait(false);
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                StatusText = "Моды скачаны. Forge installer лежит в temp — двойной клик чтобы установить.";
+                RefreshContent();
+            });
+            try
+            {
+                Process.Start(new ProcessStartInfo(forge) { UseShellExecute = true });
+            }
+            catch { /* Linux/macOS — пользователь откроет вручную */ }
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Error("InstallPerformancePack failed", ex);
+            StatusText = "Ошибка: " + ex.Message;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task DownloadShaderAsync(ShaderpackInfo? pack)
+    {
+        if (pack is null) return;
+        IsBusy = true;
+        try
+        {
+            var progress = new Progress<DownloadProgress>(p => StatusText = p.Status);
+            await ShaderpackCatalog.DownloadAsync(pack, progress).ConfigureAwait(false);
+            await Dispatcher.UIThread.InvokeAsync(RefreshContent);
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Error("Download shader failed", ex);
+            StatusText = "Ошибка: " + ex.Message;
+        }
+        finally { IsBusy = false; }
+    }
+
+    // ---------- backups ----------
+    public ObservableCollection<BackupInfo> Backups { get; } = new();
+
+    private void RefreshBackups() => ReloadInto(Backups, BackupService.List());
+
+    private async Task CreateBackupAsync()
+    {
+        IsBusy = true;
+        StatusText = "Создаём бэкап миров…";
+        try
+        {
+            var info = await BackupService.CreateAsync().ConfigureAwait(false);
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                RefreshBackups();
+                StatusText = $"Бэкап создан: {info.FileName} ({info.SizeBytes / 1024} КБ)";
+            });
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Error("CreateBackup failed", ex);
+            StatusText = "Ошибка: " + ex.Message;
+        }
+        finally { IsBusy = false; }
+    }
+
+    private async Task RestoreBackupAsync(BackupInfo? backup)
+    {
+        if (backup is null) return;
+        IsBusy = true;
+        StatusText = "Восстанавливаем бэкап (текущие миры будут сохранены автоматически)…";
+        try
+        {
+            await BackupService.RestoreAsync(backup, replaceExisting: true).ConfigureAwait(false);
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                RefreshBackups();
+                StatusText = "Бэкап восстановлен.";
+            });
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Error("RestoreBackup failed", ex);
+            StatusText = "Ошибка: " + ex.Message;
+        }
+        finally { IsBusy = false; }
+    }
+
+    private void DeleteBackup(BackupInfo? backup)
+    {
+        if (backup is null) return;
+        try
+        {
+            BackupService.Delete(backup);
+            RefreshBackups();
+            StatusText = "Бэкап удалён.";
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Error("DeleteBackup failed", ex);
+            StatusText = "Ошибка: " + ex.Message;
+        }
+    }
+
+    // ---------- screenshots gallery ----------
+    public ObservableCollection<string> Screenshots { get; } = new();
+
+    private void RefreshScreenshots()
+    {
+        Screenshots.Clear();
+        var dir = Path.Combine(Paths.GameDir, "screenshots");
+        if (!Directory.Exists(dir)) return;
+        var files = new DirectoryInfo(dir)
+            .GetFiles("*.png")
+            .OrderByDescending(f => f.LastWriteTime)
+            .Take(60);
+        foreach (var f in files) Screenshots.Add(f.FullName);
+    }
+
+    private void OpenScreenshot(string? path)
+    {
+        if (string.IsNullOrEmpty(path)) return;
+        try
+        {
+            Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+        }
+        catch (Exception ex) { AppLogger.Warn("OpenScreenshot failed: " + ex.Message); }
+    }
+
+    // ---------- settings export/import ----------
+    private async Task ExportSettingsAsync()
+    {
+        if (_owner is null) return;
+        var sp = TopLevel.GetTopLevel(_owner)?.StorageProvider;
+        if (sp is null) return;
+        var file = await sp.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Сохранить настройки",
+            SuggestedFileName = $"pclun-settings-{DateTime.Now:yyyyMMdd}.json",
+            DefaultExtension = "json"
+        });
+        if (file is null) return;
+        try
+        {
+            SettingsExport.Export(_settings, file.Path.LocalPath);
+            StatusText = "Настройки экспортированы: " + file.Path.LocalPath;
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Error("ExportSettings failed", ex);
+            StatusText = "Ошибка: " + ex.Message;
+        }
+    }
+
+    private async Task ImportSettingsAsync()
+    {
+        if (_owner is null) return;
+        var sp = TopLevel.GetTopLevel(_owner)?.StorageProvider;
+        if (sp is null) return;
+        var files = await sp.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Загрузить настройки",
+            AllowMultiple = false,
+            FileTypeFilter = new[] { new FilePickerFileType("JSON") { Patterns = new[] { "*.json" } } }
+        });
+        if (files is null || files.Count == 0) return;
+        try
+        {
+            var loaded = SettingsExport.Import(files[0].Path.LocalPath);
+            // Перезагрузим LauncherSettings — простейший способ: применить значения через property-setters,
+            // что и сохранит/обновит UI. Для краткости — попросим юзера перезапустить.
+            StatusText = "Настройки загружены. Перезапустите лаунчер для применения.";
+            AppLogger.Info("Settings imported, will be active after restart.");
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Error("ImportSettings failed", ex);
+            StatusText = "Ошибка: " + ex.Message;
+        }
+    }
+
+    // ---------- player stats ----------
+    private string _playerStatsLine = "Часов: 0 · Сессий: 0";
+    public string PlayerStatsLine { get => _playerStatsLine; set => this.RaiseAndSetIfChanged(ref _playerStatsLine, value); }
+
+    private string _lastServerLine = "—";
+    public string LastServerLine { get => _lastServerLine; set => this.RaiseAndSetIfChanged(ref _lastServerLine, value); }
+
+    private void UpdatePlayerStats()
+    {
+        var s = PlayerStatsService.Load();
+        var fps = PlayerStatsService.AvgFpsFromLatestLog();
+        PlayerStatsLine = $"Часов: {s.Hours} · Сессий: {s.Sessions} · Самая длинная: {TimeSpan.FromSeconds(s.LongestSessionSeconds).Hours}ч{TimeSpan.FromSeconds(s.LongestSessionSeconds).Minutes:00}м"
+                          + (fps is not null ? $" · ~FPS: {fps:0}" : "");
+        LastServerLine = string.IsNullOrWhiteSpace(s.LastServer) ? "—" : s.LastServer;
+    }
+
+    // ---------- skin viewer ----------
+    private string _skinAvatarUrl = "";
+    public string SkinAvatarUrl { get => _skinAvatarUrl; set => this.RaiseAndSetIfChanged(ref _skinAvatarUrl, value); }
+
+    private string _skinFullBodyUrl = "";
+    public string SkinFullBodyUrl { get => _skinFullBodyUrl; set => this.RaiseAndSetIfChanged(ref _skinFullBodyUrl, value); }
+
+    private void UpdateSkinUrls()
+    {
+        SkinAvatarUrl = SkinService.AvatarUrl(_settings.Nickname);
+        SkinFullBodyUrl = SkinService.FullBodyUrl(_settings.Nickname);
+    }
+
+    // ---------- news + leaderboard ----------
+    public ObservableCollection<RemoteCatalog.NewsItem> NewsItems { get; } = new();
+    public ObservableCollection<RemoteCatalog.LeaderboardItem> LeaderboardItems { get; } = new();
+
+    private string _statsLine = "—";
+    public string StatsLine { get => _statsLine; set => this.RaiseAndSetIfChanged(ref _statsLine, value); }
+
+    private async Task RefreshNewsAsync()
+    {
+        var items = await RemoteCatalog.FetchNewsAsync().ConfigureAwait(false);
+        await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            NewsItems.Clear();
+            foreach (var i in items) NewsItems.Add(i);
+        });
+    }
+
+    private async Task RefreshLeaderboardAsync()
+    {
+        var items = await RemoteCatalog.FetchLeaderboardAsync().ConfigureAwait(false);
+        await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            LeaderboardItems.Clear();
+            foreach (var i in items) LeaderboardItems.Add(i);
+        });
+    }
+
+    private async Task RefreshStatsAsync()
+    {
+        var s = await RemoteCatalog.FetchStatsAsync().ConfigureAwait(false);
+        if (s is null) return;
+        await Dispatcher.UIThread.InvokeAsync(() =>
+            StatsLine = $"Сейчас в игре: {s.Online} · сегодня уник.: {s.Today} · пик: {s.Peak} · всего: {s.Total}");
+    }
+
+    private async Task InitExtrasAsync()
+    {
+        // Проверка обновлений в фоне.
+        try
+        {
+            var info = await UpdateService.CheckAsync().ConfigureAwait(false);
+            if (info is { IsNewer: true })
+            {
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    UpdateAvailable = true;
+                    UpdateBannerText = $"Доступно обновление: {info.LatestVersion} (у вас {info.CurrentVersion})";
+                    LatestReleaseUrl = info.Url;
+                });
+            }
+        }
+        catch { }
+
+        // Подгрузка серверов из бэкенда (с фоллбэком на захардкоженный список).
+        try
+        {
+            var remote = await RemoteCatalog.FetchServersAsync().ConfigureAwait(false);
+            if (remote.Count > 0)
+            {
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    ServerSuggestions.Clear();
+                    foreach (var s in remote) ServerSuggestions.Add(s.Address);
+                    if (!ServerSuggestions.Contains("localhost:25565"))
+                        ServerSuggestions.Add("localhost:25565");
+                });
+            }
+        }
+        catch { }
+
+        await RefreshNewsAsync().ConfigureAwait(false);
+        await RefreshStatsAsync().ConfigureAwait(false);
+        await RefreshLeaderboardAsync().ConfigureAwait(false);
+
+        // Discord RPC — best-effort.
+        try
+        {
+            if (await DiscordRpcService.ConnectAsync().ConfigureAwait(false))
+            {
+                await DiscordRpcService.SetActivityAsync(
+                    state: $"Профиль: {ProfileBadge}",
+                    details: "В лаунчере PcLun by MrDomik").ConfigureAwait(false);
+            }
+        }
+        catch { }
     }
 }
