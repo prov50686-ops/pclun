@@ -8,7 +8,7 @@
     <projectUrl>https://github.com/prov50686-ops/pclun</projectUrl>
     <licenseUrl>https://github.com/prov50686-ops/pclun</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <summary>Minecraft 1.16.5 + OptiFine launcher (Pro Edition).</summary>
+    <summary>PcLun by MrDomik — современный open-source лаунчер Minecraft на русском, Theme 2026.</summary>
     <description>
       PcLun — Avalonia-based launcher for MC 1.16.5 + OptiFine, with multi-instance,
       Modrinth, server browser, friends/chat, achievements, cloud backup, theme,

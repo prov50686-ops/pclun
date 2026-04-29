@@ -2,9 +2,9 @@
 
 # PcLun by MrDomik
 
-### Лёгкий лаунчер Minecraft на русском — для слабых ПК
+### Лёгкий, современный лаунчер Minecraft на русском — для слабых ПК
 
-**Theme 2026 · v0.5.0**
+**Theme 2026 · v0.5.0** — полный редизайн интерфейса, чёрно-белая палитра
 
 [![Build Windows](https://github.com/prov50686-ops/pclun/actions/workflows/build-windows.yml/badge.svg)](https://github.com/prov50686-ops/pclun/actions/workflows/build-windows.yml)
 [![Build Linux](https://github.com/prov50686-ops/pclun/actions/workflows/build-linux.yml/badge.svg)](https://github.com/prov50686-ops/pclun/actions/workflows/build-linux.yml)
@@ -25,7 +25,26 @@
 
 ---
 
+## 🆕 Что нового в v0.5.0 — Theme 2026 🎨
+
+Большой визуальный апдейт без изменения функциональности. Чёрно-белая палитра остаётся, но интерфейс ощущается современнее и опрятнее — «product OS» 2026 года.
+
+- 🖤 Углублённая монохромная палитра (`#070708` → `#16161A` → `#1C1C20`), смягчённый текст (`#F5F5F7` / `#9C9CA3` / `#5A5A60`).
+- 🔤 Новая иерархия типографики (`h1`/`h2`/`h3`/`subtitle`/`label`/`brand` + `mono`), `LineHeight` у заголовков.
+- 🪟 Карточки и поверхности с радиусами 14–22 и мягкими `BoxShadow`. Hero-блок с диагональным B&W-градиентом.
+- 🎬 Кнопка  «Играть» — белый вертикальный градиент, радиус 16, отдельные стили hover/pressed/disabled.
+- 🧭 Сайдбар — у активного пункта появилась тонкая белая полоска-индикатор слева.
+- 📝 `TextBox` / `ComboBox` — focus-обводка 1.5px белым, hover = `BorderAccent`.
+- 🔘 Новые pill-стили: `pill`, `pill-success`, `pill-warning`, `pill-accent` (чёрный текст на белом).
+- 📊 `ProgressBar` — 8px, полностью скруглённый индикатор. `CheckBox`, `Slider`, `ScrollBar`, `ToolTip`, `TabItem` приведены к единому стилю.
+
+Полный список — в [CHANGELOG »](./CHANGELOG.md#050--2026-04-29--theme-2026-).
+
+---
+
 ## 📸 Как выглядит
+
+> Ниже — скриншоты предыдущей темы. Обновлённые скрины интерфейса в стиле **Theme 2026** будут добавлены отдельным апдейтом.
 
 | Главная — запуск в один клик | Pro — мульти-инстансы, Modrinth, серверы, друзья |
 |:---:|:---:|
@@ -51,7 +70,7 @@
 - 🧠 **Умный JVM**: G1GC + Aikar-style флаги, авто-`-Xmx` по системной RAM
 - 🔐 **Два режима входа**: офлайн (любой ник) или Microsoft Account (премиум)
 
-### Pro Edition (v0.5.0)
+### Pro-фичи
 - 🗂 **Мульти-инстансы** — отдельный `.minecraft` под каждый профиль
 - 🎯 **Любая версия Minecraft** через Mojang piston-meta (1.8.9, 1.12.2, 1.16.5, 1.18.2, 1.19.4, 1.20.1)
 - 📦 **Импорт модпаков** `.zip`, `.mrpack`, CurseForge overrides
