@@ -4,6 +4,24 @@
 
 ---
 
+## [0.5.1] — 2026-04-29 — bugfixes
+
+Стабильность поверх Theme 2026. UI и функциональность не менялись — починены баги, всплывшие в живом тестировании v0.5.0.
+
+### 🐛 Исправлено
+
+- **Краш `Avalonia.Threading.DispatcherException: Call from invalid thread`** при установке Performance Pack. Setters `IsBusy` / `StatusText` / `ProgressPercent` / `IsIndeterminate` / `OnlineStatusText` / `AuthStatus` / `LogText` теперь thread-safe — при вызове не с UI-потока ре-постят себя через `Dispatcher.UIThread`. Это убирает падение приложения при `IsBusy = false` в `finally` после `await … ConfigureAwait(false)`.
+- **Performance Pack 403 от CurseForge mediafilez.** Хардкод на `mediafilez.forgecdn.net` заменён резолвом через Modrinth API на момент скачивания. Список модов сокращён до тех, что реально есть на Modrinth для 1.16.5+forge: **FerriteCore + Entity Culling + Memory Leak Fix**. Krypton / Starlight / SmoothBoot убраны — у них нет совместимой forge-версии на Modrinth.
+- **Forge installer на Linux/macOS** теперь запускается через `java -jar` напрямую (через `JavaManager.TryFindSystemJava()`), вместо `xdg-open` / `Process.Start(jar, UseShellExecute=true)`, который открывал `.jar` в архиваторе или браузере. Если java не найдена — открываем папку с installer'ом.
+- **Спам в логе при недоступном онлайн-бэкенде.** `OnlineService` теперь circuit breaker: после первой ошибки 5 минут не дёргаем эндпоинт. Лог получает одну `INFO` строку вместо пачки `WARN`. `RemoteCatalog` (`FetchNews` / `FetchServers` / `FetchStats` / `FetchLeaderboard`) уважает тот же флаг.
+- **Текст подзаголовка Performance Pack** в `Views/MainWindow.axaml` обновлён под актуальный список из 3 модов.
+
+### 🔧 Под капотом
+
+- Версия проекта поднята до `0.5.1` в `Launcher.csproj`, `TelemetryService`, README, packaging (winget / chocolatey / homebrew / cloudflare) и фолбэках MSI / deb / rpm workflow.
+
+---
+
 ## [0.5.0] — 2026-04-29 — Theme 2026 🎨
 
 Большой визуальный апдейт без изменения функциональности. Чёрно-белая палитра остаётся, но интерфейс ощущается современнее, плотнее и опрятнее — «product OS» 2026 года.

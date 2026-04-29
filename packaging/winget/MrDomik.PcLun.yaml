@@ -1,6 +1,6 @@
 # WinGet manifest scaffold. Replace ${ver}, ${url}, ${sha256} when releasing.
 PackageIdentifier: MrDomik.PcLun
-PackageVersion: 0.5.0
+PackageVersion: 0.5.1
 PackageLocale: en-US
 Publisher: MrDomik
 PublisherUrl: https://github.com/prov50686-ops/pclun
@@ -10,7 +10,7 @@ ShortDescription: PcLun by MrDomik — современный open-source лау
 Installers:
   - Architecture: x64
     InstallerType: msi
-    InstallerUrl: https://github.com/prov50686-ops/pclun/releases/download/v0.5.0/PcLun-0.5.0.msi
+    InstallerUrl: https://github.com/prov50686-ops/pclun/releases/download/v0.5.1/PcLun-0.5.1.msi
     InstallerSha256: REPLACE_AT_RELEASE
 ManifestType: singleton
 ManifestVersion: 1.5.0
