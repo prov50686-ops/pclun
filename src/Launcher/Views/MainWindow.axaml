@@ -752,7 +752,7 @@
                                     <TextBlock Classes="h3" Text="Performance Pack (Forge 1.16.5)" />
                                     <Border Classes="divider" />
                                     <TextBlock Classes="subtitle" TextWrapping="Wrap"
-                                               Text="Скачивает FerriteCore + Krypton + Starlight + SmoothBoot + EntityCulling + MemoryLeakFix в папку mods/. Forge installer открывается отдельно — в нём один раз нажмите «Install client»." />
+                                               Text="Скачивает FerriteCore + EntityCulling + MemoryLeakFix в папку mods/ (через Modrinth API). Forge installer открывается отдельно — в нём один раз нажмите «Install client»." />
                                     <ItemsControl ItemsSource="{Binding PerformanceMods}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>

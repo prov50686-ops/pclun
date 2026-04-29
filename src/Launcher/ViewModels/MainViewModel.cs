@@ -434,6 +434,12 @@ public partial class MainViewModel : ReactiveObject
     public string ArchInfo => "Архитектура: " + SystemInfo.Arch;
     public string RamInfo => SystemInfo.TotalRamMb > 0 ? $"Память: {SystemInfo.TotalRamMb} МБ" : "Память: неизвестно";
 
+    // Все следующие свойства привязаны к UI; их сеттеры вызывают RaisePropertyChanged,
+    // а это можно делать только с UI-потока. Любая фоновая задача, делающая
+    // `IsBusy = false` в `finally` после `.ConfigureAwait(false)`, попадает сюда
+    // не с UI — поэтому нормализуем доступ через диспетчер.
+    private static bool IsOnUi => Dispatcher.UIThread.CheckAccess();
+
     // ---------- play state ----------
     private bool _isBusy;
     public bool IsBusy
@@ -441,6 +447,7 @@ public partial class MainViewModel : ReactiveObject
         get => _isBusy;
         set
         {
+            if (!IsOnUi) { Dispatcher.UIThread.Post(() => IsBusy = value); return; }
             this.RaiseAndSetIfChanged(ref _isBusy, value);
             this.RaisePropertyChanged(nameof(CanPlay));
             this.RaisePropertyChanged(nameof(PlayButtonText));
@@ -448,26 +455,74 @@ public partial class MainViewModel : ReactiveObject
     }
 
     private string _statusText = "Готово.";
-    public string StatusText { get => _statusText; set => this.RaiseAndSetIfChanged(ref _statusText, value); }
+    public string StatusText
+    {
+        get => _statusText;
+        set
+        {
+            if (!IsOnUi) { Dispatcher.UIThread.Post(() => StatusText = value); return; }
+            this.RaiseAndSetIfChanged(ref _statusText, value);
+        }
+    }
 
     private double _progressPercent;
-    public double ProgressPercent { get => _progressPercent; set => this.RaiseAndSetIfChanged(ref _progressPercent, value); }
+    public double ProgressPercent
+    {
+        get => _progressPercent;
+        set
+        {
+            if (!IsOnUi) { Dispatcher.UIThread.Post(() => ProgressPercent = value); return; }
+            this.RaiseAndSetIfChanged(ref _progressPercent, value);
+        }
+    }
 
     private bool _isIndeterminate;
-    public bool IsIndeterminate { get => _isIndeterminate; set => this.RaiseAndSetIfChanged(ref _isIndeterminate, value); }
+    public bool IsIndeterminate
+    {
+        get => _isIndeterminate;
+        set
+        {
+            if (!IsOnUi) { Dispatcher.UIThread.Post(() => IsIndeterminate = value); return; }
+            this.RaiseAndSetIfChanged(ref _isIndeterminate, value);
+        }
+    }
 
     public bool CanPlay => !IsBusy && !string.IsNullOrWhiteSpace(_settings.Nickname);
     public string PlayButtonText => IsBusy ? "Установка…" : "Играть";
 
     private string _onlineStatusText = "Подключение…";
-    public string OnlineStatusText { get => _onlineStatusText; set => this.RaiseAndSetIfChanged(ref _onlineStatusText, value); }
+    public string OnlineStatusText
+    {
+        get => _onlineStatusText;
+        set
+        {
+            if (!IsOnUi) { Dispatcher.UIThread.Post(() => OnlineStatusText = value); return; }
+            this.RaiseAndSetIfChanged(ref _onlineStatusText, value);
+        }
+    }
 
     private string _authStatus = "";
-    public string AuthStatus { get => _authStatus; set => this.RaiseAndSetIfChanged(ref _authStatus, value); }
+    public string AuthStatus
+    {
+        get => _authStatus;
+        set
+        {
+            if (!IsOnUi) { Dispatcher.UIThread.Post(() => AuthStatus = value); return; }
+            this.RaiseAndSetIfChanged(ref _authStatus, value);
+        }
+    }
 
     // ---------- log ----------
     private string _logText = "";
-    public string LogText { get => _logText; set => this.RaiseAndSetIfChanged(ref _logText, value); }
+    public string LogText
+    {
+        get => _logText;
+        set
+        {
+            if (!IsOnUi) { Dispatcher.UIThread.Post(() => LogText = value); return; }
+            this.RaiseAndSetIfChanged(ref _logText, value);
+        }
+    }
 
     // ---------- commands ----------
     public ICommand PlayCommand { get; }
@@ -1001,9 +1056,22 @@ public partial class MainViewModel : ReactiveObject
             });
             try
             {
-                Process.Start(new ProcessStartInfo(forge) { UseShellExecute = true });
+                // На Windows .jar по двойному клику запускает Java, но на Linux/macOS
+                // xdg-open открывает .jar в архиваторе (или браузере при ассоциации). Поэтому
+                // пытаемся запустить через `java -jar` явно, а если это не работает —
+                // просто открываем папку с installer'ом, пусть пользователь сам кликнет.
+                var java = JavaManager.TryFindSystemJava() ?? _settings.CustomJavaPath;
+                if (!string.IsNullOrEmpty(java) && JavaManager.IsJavaUsable(java))
+                {
+                    Process.Start(new ProcessStartInfo(java, $"-jar \"{forge}\"") { UseShellExecute = false });
+                }
+                else
+                {
+                    var dir = Path.GetDirectoryName(forge) ?? Paths.TempDir;
+                    Process.Start(new ProcessStartInfo(dir) { UseShellExecute = true });
+                }
             }
-            catch { /* Linux/macOS — пользователь откроет вручную */ }
+            catch (Exception ex) { AppLogger.Warn("Forge installer auto-open failed: " + ex.Message); }
         }
         catch (Exception ex)
         {
