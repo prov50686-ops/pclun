@@ -1401,7 +1401,7 @@
                                 <StackPanel Spacing="10">
                                     <TextBlock Classes="h2" Text="PcLun" />
                                     <TextBlock Classes="subtitle"
-                                               Text="{Binding CurrentLauncherVersion, StringFormat='Версия {0} · Community Edition'}" />
+                                               Text="{Binding CurrentLauncherVersion, StringFormat='Версия {0} · Theme 2026'}" />
                                     <Border Classes="divider" />
                                     <TextBlock Classes="subtitle" TextWrapping="Wrap"
                                                Text="Минималистичный лаунчер Minecraft 1.16.5 с авто-установкой OptiFine, профилями FPS-оптимизации и онлайн-счётчиком." />
