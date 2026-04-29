@@ -68,7 +68,7 @@ public class LauncherSettings
     [JsonPropertyName("fullscreen")] public bool Fullscreen { get; set; } = false;
     [JsonPropertyName("custom_game_dir")] public string CustomGameDir { get; set; } = "";
 
-    // ---- 0.4 Pro features ----
+    // ---- Pro features ----
     [JsonPropertyName("active_instance")] public string ActiveInstance { get; set; } = "default";
     [JsonPropertyName("mc_version")] public string McVersion { get; set; } = "1.16.5";
     [JsonPropertyName("loader")] public string Loader { get; set; } = "optifine";

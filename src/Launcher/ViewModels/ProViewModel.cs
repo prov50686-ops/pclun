@@ -14,7 +14,7 @@ using ReactiveUI;
 namespace PcLun.ViewModels;
 
 /// <summary>
-/// Surface for the v0.4 "Pro" tab — multi-instance, dynamic versions, Modrinth,
+/// Surface for the "Pro" tab — multi-instance, dynamic versions, Modrinth,
 /// server browser, friends/chat/achievements, cloud backup, theme, diagnostics, etc.
 /// Lives as a partial of <see cref="MainViewModel"/> to keep the main file readable.
 /// </summary>

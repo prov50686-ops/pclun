@@ -43,7 +43,7 @@ LEGACY_TOTAL_FILE = os.environ.get("PCLUN_DATA_FILE", os.path.join(DATA_DIR, "to
 RATE_LIMIT_WINDOW = 60.0
 RATE_LIMIT_MAX = 30
 
-app = FastAPI(title="PcLun Online", version="0.4.0")
+app = FastAPI(title="PcLun Online", version="0.5.1")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -252,12 +252,21 @@ def stats() -> dict:
 # News are kept in-memory; can be edited by setting PCLUN_NEWS env (JSON array).
 _DEFAULT_NEWS = [
     {
-        "title": "PcLun 0.3 — много нового",
+        "title": "PcLun v0.5.1 — багфиксы поверх Theme 2026",
         "body": (
-            "Авто-обновление, менеджер модов и шейдеров, бэкапы миров, "
-            "анализатор краш-логов, Discord Rich Presence, скин-вьювер."
+            "Стабильность поверх дизайн-апдейта v0.5.0: thread-safe UI, "
+            "Performance Pack через Modrinth API, тише лог при недоступном бэкенде."
         ),
         "date": "2026-04-29",
+        "tag": "release",
+    },
+    {
+        "title": "Theme 2026 — новый интерфейс",
+        "body": (
+            "Полный редизайн темы: углублённый монохром, новая типографика, "
+            "карточки 14–22px, белая «Играть» с градиентом, тонкая полоска-индикатор активной вкладки."
+        ),
+        "date": "2026-04-28",
         "tag": "release",
     },
     {
@@ -603,4 +612,4 @@ def site_changelog() -> str:
 
 @app.get("/")
 def root() -> dict:
-    return {"service": "pclun-online", "version": "0.4.0", "ok": True}
+    return {"service": "pclun-online", "version": "0.5.1", "ok": True}
