@@ -98,7 +98,7 @@ public static class GameLauncher
 
         jvmArgs.Add($"-Djava.library.path={Paths.NativesDir}");
         jvmArgs.Add($"-Dminecraft.launcher.brand=PcLun");
-        jvmArgs.Add($"-Dminecraft.launcher.version=0.3.0");
+        jvmArgs.Add($"-Dminecraft.launcher.version={typeof(GameLauncher).Assembly.GetName().Version?.ToString(3) ?? "0.5.1"}");
         jvmArgs.Add("-cp");
         jvmArgs.Add(cpString);
 

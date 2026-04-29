@@ -96,7 +96,7 @@
 - ☁️ **Облачный бэкап** миров через S3/R2 (presigned URL)
 
 ### Контент-менеджер
-- 🚀 **Performance Pack** в один клик: FerriteCore + Krypton + Starlight + SmoothBoot + EntityCulling + MemoryLeakFix
+- 🚀 **Performance Pack** в один клик: FerriteCore + Entity Culling + Memory Leak Fix (через Modrinth API)
 - 🌑 **Каталог low-end шейдеров** (Sildur's Vibrant Lite, Builder's QoL и др.)
 - 🧩 **Менеджер модов** — drag-drop, вкл/выкл одной галочкой, удаление
 - 💾 **Бэкап миров** — снимок `saves/` в zip + восстановление
@@ -257,7 +257,7 @@ tests/Launcher.Tests/          # xUnit тесты (28 штук)
 ```
 runtime/jre8/        — встроенная Java
 minecraft/           — основной .minecraft (versions, libraries, assets, saves, mods)
-instances/           — дополнительные профили (Pro Edition)
+instances/           — дополнительные профили (мульти-инстансы)
 accounts.json        — сохранённые аккаунты
 backups/             — локальные снимки миров
 launcher.log

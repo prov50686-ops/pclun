@@ -70,7 +70,7 @@ public partial class MainViewModel : ReactiveObject
         ClearLogCommand = ReactiveCommand.Create(ClearLog);
         PickServerCommand = ReactiveCommand.Create<string>(PickServer);
 
-        // ---- 0.3 features: content, backups, community ----
+        // ---- content / backups / community feature commands ----
         CheckUpdateCommand = ReactiveCommand.CreateFromTask(CheckUpdateAsync);
         OpenLatestReleaseCommand = ReactiveCommand.Create(OpenLatestRelease);
         ScanCrashesCommand = ReactiveCommand.Create(ScanCrashes);
@@ -879,7 +879,7 @@ public partial class MainViewModel : ReactiveObject
     }
 
     // ============================================================================
-    //                       0.3 features (content/community)
+    //                       content / community / backups
     // ============================================================================
 
     // ---------- update banner ----------
