@@ -6,6 +6,7 @@
         mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="800"
         x:Class="PcLun.Views.MainWindow"
         x:DataType="vm:MainViewModel"
+        x:Name="Root"
         Title="PcLun by MrDomik — Minecraft 1.16.5 OptiFine"
         Icon="/app.ico"
         Width="1280" Height="800" MinWidth="1100" MinHeight="700"
@@ -115,6 +116,27 @@
                             </StackPanel>
                         </RadioButton>
 
+                        <RadioButton Classes="nav" GroupName="nav" IsChecked="{Binding IsContentTab, Mode=TwoWay}">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <TextBlock Text="◫" FontSize="13" Width="16" />
+                                <TextBlock Text="Контент" />
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton Classes="nav" GroupName="nav" IsChecked="{Binding IsCommunityTab, Mode=TwoWay}">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <TextBlock Text="✦" FontSize="13" Width="16" />
+                                <TextBlock Text="Сообщество" />
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton Classes="nav" GroupName="nav" IsChecked="{Binding IsProTab, Mode=TwoWay}">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <TextBlock Text="★" FontSize="13" Width="16" />
+                                <TextBlock Text="Pro" />
+                            </StackPanel>
+                        </RadioButton>
+
                         <RadioButton Classes="nav" GroupName="nav" IsChecked="{Binding IsToolsTab, Mode=TwoWay}">
                             <StackPanel Orientation="Horizontal" Spacing="12">
                                 <TextBlock Text="⚙" FontSize="13" Width="16" />
@@ -149,14 +171,28 @@
                                      IsVisible="{Binding IsBusy}" />
                     </StackPanel>
                     <TextBlock Grid.Column="1" Classes="dim"
-                               Text="PcLun 0.2.4 by MrDomik · Minecraft 1.16.5 + OptiFine"
+                               Text="{Binding CurrentLauncherVersion, StringFormat='PcLun {0} by MrDomik · MC 1.16.5 + OptiFine'}"
                                VerticalAlignment="Center" Margin="20,0,0,0" />
                 </Grid>
             </Border>
 
             <!-- Content area -->
             <ScrollViewer Grid.Row="0" Padding="0">
-                <Grid>
+                <Grid RowDefinitions="Auto,*">
+
+                    <!-- Update banner -->
+                    <Border Grid.Row="0" IsVisible="{Binding UpdateAvailable}"
+                            Padding="20,10" Background="#3aff7a14" BorderBrush="#80ff7a14" BorderThickness="0,0,0,1">
+                        <Grid ColumnDefinitions="*,Auto,Auto">
+                            <TextBlock Grid.Column="0" Text="{Binding UpdateBannerText}" VerticalAlignment="Center" />
+                            <Button Grid.Column="1" Content="Открыть Releases"
+                                    Command="{Binding OpenLatestReleaseCommand}" />
+                            <Button Grid.Column="2" Margin="6,0,0,0" Content="Позже"
+                                    Click="DismissUpdate_Click" />
+                        </Grid>
+                    </Border>
+
+                    <Grid Grid.Row="1">
                     <!-- Home -->
                     <Grid IsVisible="{Binding IsHomeTab}" Margin="36,32,36,28">
                         <Grid RowDefinitions="Auto,Auto,*">
@@ -703,6 +739,659 @@
                         </StackPanel>
                     </ScrollViewer>
 
+                    <!-- Content (mods/shaders/resourcepacks/perf-pack/backups) -->
+                    <ScrollViewer IsVisible="{Binding IsContentTab}" Padding="36,32,36,28">
+                        <StackPanel Spacing="16" MaxWidth="1100">
+                            <TextBlock Classes="h1" Text="Контент" />
+                            <TextBlock Classes="subtitle"
+                                       Text="Управление модами, шейдерами, ресурспаками и бэкапами миров." />
+
+                            <!-- Performance pack -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h3" Text="Performance Pack (Forge 1.16.5)" />
+                                    <Border Classes="divider" />
+                                    <TextBlock Classes="subtitle" TextWrapping="Wrap"
+                                               Text="Скачивает FerriteCore + Krypton + Starlight + SmoothBoot + EntityCulling + MemoryLeakFix в папку mods/. Forge installer открывается отдельно — в нём один раз нажмите «Install client»." />
+                                    <ItemsControl ItemsSource="{Binding PerformanceMods}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,2,0,2">
+                                                    <TextBlock Text="•" Width="12" />
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                                    <TextBlock Classes="dim" Text="{Binding Description}" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <Button Classes="primary" HorizontalAlignment="Left"
+                                            Content="Установить Performance Pack"
+                                            Command="{Binding InstallPerformancePackCommand}" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Mods -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <Grid ColumnDefinitions="*,Auto,Auto">
+                                        <TextBlock Classes="h3" Grid.Column="0" Text="Моды" />
+                                        <Button Grid.Column="1" Content="Импорт .jar"
+                                                Command="{Binding ImportModCommand}" />
+                                        <Button Grid.Column="2" Content="Обновить" Margin="6,0,0,0"
+                                                Command="{Binding RefreshContentCommand}" />
+                                    </Grid>
+                                    <Border Classes="divider" />
+                                    <ItemsControl ItemsSource="{Binding ModItems}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid ColumnDefinitions="Auto,*,Auto,Auto" Margin="0,2,0,2">
+                                                    <CheckBox Grid.Column="0" IsChecked="{Binding Enabled}"
+                                                              Command="{Binding #Root.((vm:MainViewModel)DataContext).ToggleContentCommand}"
+                                                              CommandParameter="{Binding}" />
+                                                    <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                                        <TextBlock Text="{Binding Name}" />
+                                                        <TextBlock Classes="dim" Text="{Binding FullPath}" FontSize="10" />
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="2" Classes="dim"
+                                                               Text="{Binding Size, StringFormat='{}{0:N0} б'}"
+                                                               VerticalAlignment="Center" Margin="6,0,12,0" />
+                                                    <Button Grid.Column="3" Content="✕"
+                                                            Command="{Binding #Root.((vm:MainViewModel)DataContext).DeleteContentCommand}"
+                                                            CommandParameter="{Binding}" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Shaderpacks catalog -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h3" Text="Шейдеры — каталог low-end" />
+                                    <Border Classes="divider" />
+                                    <ItemsControl ItemsSource="{Binding ShaderCatalog}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,4">
+                                                    <StackPanel Grid.Column="0">
+                                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                                        <TextBlock Classes="dim" Text="{Binding Description}" TextWrapping="Wrap" />
+                                                    </StackPanel>
+                                                    <Button Grid.Column="1" Content="Скачать"
+                                                            Command="{Binding #Root.((vm:MainViewModel)DataContext).DownloadShaderCommand}"
+                                                            CommandParameter="{Binding}" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Installed shaderpacks -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Classes="h3" Grid.Column="0" Text="Установленные шейдеры" />
+                                        <Button Grid.Column="1" Content="Импорт .zip"
+                                                Command="{Binding ImportShaderCommand}" />
+                                    </Grid>
+                                    <Border Classes="divider" />
+                                    <ItemsControl ItemsSource="{Binding ShaderItems}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,2,0,2">
+                                                    <CheckBox Grid.Column="0" IsChecked="{Binding Enabled}"
+                                                              Command="{Binding #Root.((vm:MainViewModel)DataContext).ToggleContentCommand}"
+                                                              CommandParameter="{Binding}" />
+                                                    <TextBlock Grid.Column="1" Text="{Binding Name}" Margin="8,0,0,0" />
+                                                    <Button Grid.Column="2" Content="✕"
+                                                            Command="{Binding #Root.((vm:MainViewModel)DataContext).DeleteContentCommand}"
+                                                            CommandParameter="{Binding}" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Resourcepacks -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Classes="h3" Grid.Column="0" Text="Ресурспаки" />
+                                        <Button Grid.Column="1" Content="Импорт .zip"
+                                                Command="{Binding ImportResourcepackCommand}" />
+                                    </Grid>
+                                    <Border Classes="divider" />
+                                    <ItemsControl ItemsSource="{Binding ResourcePackItems}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,2,0,2">
+                                                    <CheckBox Grid.Column="0" IsChecked="{Binding Enabled}"
+                                                              Command="{Binding #Root.((vm:MainViewModel)DataContext).ToggleContentCommand}"
+                                                              CommandParameter="{Binding}" />
+                                                    <TextBlock Grid.Column="1" Text="{Binding Name}" Margin="8,0,0,0" />
+                                                    <Button Grid.Column="2" Content="✕"
+                                                            Command="{Binding #Root.((vm:MainViewModel)DataContext).DeleteContentCommand}"
+                                                            CommandParameter="{Binding}" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Backups -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+                                        <TextBlock Classes="h3" Grid.Column="0" Text="Бэкапы миров" />
+                                        <Button Grid.Column="1" Classes="primary" Content="Создать бэкап"
+                                                Command="{Binding CreateBackupCommand}" />
+                                        <Button Grid.Column="2" Content="Папка" Margin="6,0,0,0"
+                                                Command="{Binding OpenBackupsFolderCommand}" />
+                                        <Button Grid.Column="3" Content="Обновить" Margin="6,0,0,0"
+                                                Command="{Binding RefreshBackupsCommand}" />
+                                    </Grid>
+                                    <Border Classes="divider" />
+                                    <TextBlock Classes="subtitle" TextWrapping="Wrap"
+                                               Text="Перед восстановлением текущая папка saves автоматически архивируется (before-restore-…zip)." />
+                                    <ItemsControl ItemsSource="{Binding Backups}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid ColumnDefinitions="*,Auto,Auto,Auto" Margin="0,2,0,2">
+                                                    <StackPanel Grid.Column="0">
+                                                        <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" />
+                                                        <TextBlock Classes="dim"
+                                                                   Text="{Binding Created, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" />
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="1" Classes="dim"
+                                                               Text="{Binding SizeBytes, StringFormat='{}{0:N0} б'}"
+                                                               VerticalAlignment="Center" Margin="6,0,12,0" />
+                                                    <Button Grid.Column="2" Content="Восстановить"
+                                                            Command="{Binding #Root.((vm:MainViewModel)DataContext).RestoreBackupCommand}"
+                                                            CommandParameter="{Binding}" />
+                                                    <Button Grid.Column="3" Content="✕" Margin="6,0,0,0"
+                                                            Command="{Binding #Root.((vm:MainViewModel)DataContext).DeleteBackupCommand}"
+                                                            CommandParameter="{Binding}" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Community: news, stats, leaderboard, skin, screenshots, settings i/o, crash analyzer -->
+                    <ScrollViewer IsVisible="{Binding IsCommunityTab}" Padding="36,32,36,28">
+                        <StackPanel Spacing="16" MaxWidth="1100">
+                            <TextBlock Classes="h1" Text="Сообщество" />
+
+                            <!-- News -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Grid.Column="0" Classes="h3" Text="Новости" />
+                                        <Button Grid.Column="1" Content="Обновить"
+                                                Command="{Binding RefreshNewsCommand}" />
+                                    </Grid>
+                                    <Border Classes="divider" />
+                                    <ItemsControl ItemsSource="{Binding NewsItems}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Margin="0,4,0,8">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                                                        <TextBlock Classes="dim" Text="{Binding Date}" />
+                                                    </StackPanel>
+                                                    <TextBlock Text="{Binding Body}" TextWrapping="Wrap" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Online stats / leaderboard -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Grid.Column="0" Classes="h3" Text="Онлайн PcLun" />
+                                        <Button Grid.Column="1" Content="Обновить"
+                                                Command="{Binding RefreshLeaderboardCommand}" />
+                                    </Grid>
+                                    <Border Classes="divider" />
+                                    <TextBlock Text="{Binding StatsLine}" />
+                                    <Border Classes="divider" />
+                                    <TextBlock Classes="label" Text="Топ игроков (по числу сессий)" />
+                                    <ItemsControl ItemsSource="{Binding LeaderboardItems}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid ColumnDefinitions="40,*,Auto" Margin="0,2,0,2">
+                                                    <TextBlock Grid.Column="0" Text="•" />
+                                                    <TextBlock Grid.Column="1" Text="{Binding Name}" />
+                                                    <TextBlock Grid.Column="2" Classes="dim"
+                                                               Text="{Binding Sessions, StringFormat='{}{0} сессий'}" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Personal stats + skin -->
+                            <Border Classes="card">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <Border Grid.Column="0" Width="120" Height="240"
+                                            Background="{DynamicResource BgPanelBrush}"
+                                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+                                        <Image Source="{Binding SkinFullBodyUrl}"
+                                               Stretch="Uniform" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Margin="20,0,0,0" Spacing="6">
+                                        <TextBlock Classes="h3" Text="Моя статистика" />
+                                        <Border Classes="divider" />
+                                        <TextBlock Text="{Binding PlayerStatsLine}" TextWrapping="Wrap" />
+                                        <TextBlock Classes="dim"
+                                                   Text="{Binding LastServerLine, StringFormat='Последний сервер: {0}'}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <!-- Crash analyzer -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Grid.Column="0" Classes="h3" Text="Анализатор крашей" />
+                                        <Button Grid.Column="1" Content="Сканировать"
+                                                Command="{Binding ScanCrashesCommand}" />
+                                    </Grid>
+                                    <Border Classes="divider" />
+                                    <TextBlock Text="{Binding CrashStatus}" Classes="subtitle" />
+                                    <ItemsControl ItemsSource="{Binding CrashEntries}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Margin="0,4,0,4" Padding="10"
+                                                        BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+                                                    <StackPanel Spacing="4">
+                                                        <Grid ColumnDefinitions="*,Auto">
+                                                            <TextBlock Grid.Column="0" Text="{Binding FileName}" FontWeight="SemiBold" />
+                                                            <TextBlock Grid.Column="1" Classes="dim"
+                                                                       Text="{Binding Timestamp, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" />
+                                                        </Grid>
+                                                        <TextBlock Text="{Binding Diagnosis}" />
+                                                        <TextBlock Classes="dim" Text="{Binding Suggestion}" TextWrapping="Wrap" />
+                                                        <Button Content="Открыть файл"
+                                                                Command="{Binding #Root.((vm:MainViewModel)DataContext).OpenCrashCommand}"
+                                                                CommandParameter="{Binding}" HorizontalAlignment="Left" />
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Screenshots -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Grid.Column="0" Classes="h3" Text="Скриншоты" />
+                                        <Button Grid.Column="1" Content="Обновить"
+                                                Command="{Binding RefreshScreenshotsCommand}" />
+                                    </Grid>
+                                    <Border Classes="divider" />
+                                    <ItemsControl ItemsSource="{Binding Screenshots}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Margin="4" Padding="0"
+                                                        Command="{Binding #Root.((vm:MainViewModel)DataContext).OpenScreenshotCommand}"
+                                                        CommandParameter="{Binding}">
+                                                    <Image Source="{Binding}" Width="160" Height="90" Stretch="UniformToFill" />
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Settings I/O + update -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h3" Text="Настройки и обновление" />
+                                    <Border Classes="divider" />
+                                    <TextBlock Classes="subtitle"
+                                               Text="{Binding CurrentLauncherVersion, StringFormat='Текущая версия: {0}'}" />
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <Button Content="Проверить обновления" Command="{Binding CheckUpdateCommand}" />
+                                        <Button Content="Открыть Releases" Command="{Binding OpenLatestReleaseCommand}" />
+                                    </StackPanel>
+                                    <Border Classes="divider" />
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <Button Content="Экспорт настроек" Command="{Binding ExportSettingsCommand}" />
+                                        <Button Content="Импорт настроек" Command="{Binding ImportSettingsCommand}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Pro: multi-instance, version, Modrinth, server browser, friends, chat, achievements, diagnostics, theme, hosts -->
+                    <ScrollViewer IsVisible="{Binding IsProTab}" Padding="36,32,36,28">
+                        <StackPanel Spacing="14" MaxWidth="1100">
+                            <TextBlock Classes="h1" Text="Pro" />
+                            <TextBlock Classes="subtitle"
+                                       Text="Мульти-инстансы, версии, Modrinth, серверы, друзья, чат, диагностика, темы, хосты, тумблеры." />
+
+                            <!-- Instances -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h2" Text="Инстансы (профили .minecraft)" />
+                                    <ItemsControl ItemsSource="{Binding Instances}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border BorderBrush="#2a2a2e" BorderThickness="0,0,0,1" Padding="0,6">
+                                                    <Grid ColumnDefinitions="*,Auto,Auto">
+                                                        <StackPanel Grid.Column="0">
+                                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                                            <TextBlock Foreground="#888" FontSize="12">
+                                                                <Run Text="{Binding McVersion}" />
+                                                                <Run Text="·" />
+                                                                <Run Text="{Binding Loader}" />
+                                                            </TextBlock>
+                                                        </StackPanel>
+                                                        <Button Grid.Column="2" Content="Удалить"
+                                                                IsVisible="{Binding !IsDefault}"
+                                                                Command="{Binding #Root.((vm:MainViewModel)DataContext).DeleteInstanceCommand}"
+                                                                CommandParameter="{Binding}" />
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBox Width="180" Watermark="имя"
+                                                 Text="{Binding NewInstanceName, Mode=TwoWay}" />
+                                        <ComboBox SelectedItem="{Binding NewInstanceVersion, Mode=TwoWay}"
+                                                  ItemsSource="{Binding AvailableMcVersions}" Width="120" />
+                                        <ComboBox SelectedItem="{Binding NewInstanceLoader, Mode=TwoWay}" Width="120">
+                                            <ComboBoxItem>forge</ComboBoxItem>
+                                            <ComboBoxItem>fabric</ComboBoxItem>
+                                            <ComboBoxItem>optifine</ComboBoxItem>
+                                            <ComboBoxItem>vanilla</ComboBoxItem>
+                                        </ComboBox>
+                                        <Button Content="Создать" Command="{Binding CreateInstanceCommand}" />
+                                        <Button Content="Обновить версии MC" Command="{Binding RefreshVersionsCommand}" />
+                                        <Button Content="Импорт модпака (.zip / .mrpack)" Command="{Binding ImportModpackCommand}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Modrinth browser -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h2" Text="Modrinth — каталог модов" />
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBox Width="300" Watermark="поиск (jei, sodium…)"
+                                                 Text="{Binding ModrinthQuery, Mode=TwoWay}" />
+                                        <ComboBox SelectedItem="{Binding ModrinthMcVersion, Mode=TwoWay}"
+                                                  ItemsSource="{Binding AvailableMcVersions}" Width="120" />
+                                        <ComboBox SelectedItem="{Binding ModrinthLoader, Mode=TwoWay}" Width="120">
+                                            <ComboBoxItem>forge</ComboBoxItem>
+                                            <ComboBoxItem>fabric</ComboBoxItem>
+                                        </ComboBox>
+                                        <Button Content="Поиск" Command="{Binding ModrinthSearchCommand}" />
+                                    </StackPanel>
+                                    <ItemsControl ItemsSource="{Binding ModrinthResults}" MaxHeight="280">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border BorderBrush="#2a2a2e" BorderThickness="0,0,0,1" Padding="0,6">
+                                                    <Grid ColumnDefinitions="*,Auto">
+                                                        <StackPanel Grid.Column="0">
+                                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                                                            <TextBlock Foreground="#888" FontSize="12"
+                                                                       Text="{Binding Description}" TextTrimming="CharacterEllipsis" />
+                                                        </StackPanel>
+                                                        <Button Grid.Column="1" Content="Установить"
+                                                                Command="{Binding #Root.((vm:MainViewModel)DataContext).ModrinthInstallCommand}"
+                                                                CommandParameter="{Binding}" />
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Server browser -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h2" Text="Браузер серверов (MC ping)" />
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBox Width="300" Watermark="play.hypixel.net"
+                                                 Text="{Binding ServerPingInput, Mode=TwoWay}" />
+                                        <Button Content="Пинг" Command="{Binding PingServerCommand}" />
+                                        <Button Content="Пинг рекомендованных" Command="{Binding PingFeaturedCommand}" />
+                                    </StackPanel>
+                                    <ItemsControl ItemsSource="{Binding ServerEntries}" MaxHeight="220">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border BorderBrush="#2a2a2e" BorderThickness="0,0,0,1" Padding="0,6">
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding Display}" FontWeight="SemiBold" />
+                                                        <TextBlock Foreground="#888" FontSize="12" Text="{Binding Motd}" />
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- One-click loader installers -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h2" Text="Установщики (Replay, Sodium, Iris, Vivecraft, Fabric)" />
+                                    <ItemsControl ItemsSource="{Binding Installers}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border BorderBrush="#2a2a2e" BorderThickness="0,0,0,1" Padding="0,6">
+                                                    <Grid ColumnDefinitions="*,Auto">
+                                                        <StackPanel Grid.Column="0">
+                                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                                            <TextBlock Foreground="#888" FontSize="12"
+                                                                       Text="{Binding Description}" TextWrapping="Wrap" />
+                                                        </StackPanel>
+                                                        <Button Grid.Column="1" Content="Установить"
+                                                                Command="{Binding #Root.((vm:MainViewModel)DataContext).InstallExtraCommand}"
+                                                                CommandParameter="{Binding}" />
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Friends -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h2" Text="Друзья" />
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBox Width="220" Watermark="ник друга"
+                                                 Text="{Binding FriendToAdd, Mode=TwoWay}" />
+                                        <Button Content="Добавить" Command="{Binding AddFriendCommand}" />
+                                        <Button Content="Обновить" Command="{Binding RefreshFriendsCommand}" />
+                                    </StackPanel>
+                                    <ItemsControl ItemsSource="{Binding Friends}" MaxHeight="200">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border BorderBrush="#2a2a2e" BorderThickness="0,0,0,1" Padding="0,6">
+                                                    <Grid ColumnDefinitions="*,Auto,Auto">
+                                                        <TextBlock Grid.Column="0" Text="{Binding Name}" />
+                                                        <TextBlock Grid.Column="1" Margin="8,0">
+                                                            <Run Text="{Binding Sessions}" /><Run Text=" сессий" />
+                                                        </TextBlock>
+                                                        <Button Grid.Column="2" Content="Удалить"
+                                                                Command="{Binding #Root.((vm:MainViewModel)DataContext).RemoveFriendCommand}"
+                                                                CommandParameter="{Binding}" />
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Chat -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h2" Text="Чат лаунчера (WebSocket)" />
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <Button Content="Подключиться" Command="{Binding ConnectChatCommand}" />
+                                        <TextBlock VerticalAlignment="Center" Foreground="#888"
+                                                   Text="{Binding ChatStatus}" />
+                                    </StackPanel>
+                                    <ItemsControl ItemsSource="{Binding ChatMessages}" MaxHeight="200">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Display}" FontFamily="Consolas,Courier New,monospace" />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBox Width="500" Watermark="сообщение…"
+                                                 Text="{Binding ChatInput, Mode=TwoWay}" />
+                                        <Button Content="Отправить" Command="{Binding SendChatCommand}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Achievements -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h2" Text="Достижения" />
+                                    <Button Content="Обновить" Command="{Binding RefreshAchievementsCommand}" HorizontalAlignment="Left" />
+                                    <ItemsControl ItemsSource="{Binding Achievements}" MaxHeight="200">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border BorderBrush="#2a2a2e" BorderThickness="0,0,0,1" Padding="0,6">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <TextBlock Text="{Binding Icon}" FontSize="18" />
+                                                        <TextBlock Text="{Binding Title}" />
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Diagnostics -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h2" Text="Диагностика (GPU, температура, моды)" />
+                                    <Button Content="Запустить диагностику" Command="{Binding RunDiagnosticsCommand}" HorizontalAlignment="Left" />
+                                    <Grid ColumnDefinitions="170,*" RowDefinitions="Auto,Auto,Auto,Auto" Margin="0,8,0,0">
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="GPU:" Foreground="#888" />
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding GpuName}" />
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Предупреждение:" Foreground="#888" />
+                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding GpuWarning}" Foreground="#fbbf24" TextWrapping="Wrap" />
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Температура CPU:" Foreground="#888" />
+                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CpuTemp}" />
+                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Конфликты модов:" Foreground="#888" />
+                                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding ModConflictSummary}" />
+                                    </Grid>
+                                    <TextBlock Text="{Binding AntiCheatSummary}" FontStyle="Italic" Foreground="#888" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Cloud backup -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h2" Text="Облачный бэкап последнего снимка" />
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <Button Content="Загрузить" Command="{Binding CloudBackupCommand}" />
+                                        <TextBlock VerticalAlignment="Center" Text="{Binding CloudBackupStatus}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Theme + accent -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h2" Text="Тема и акцент" />
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <ComboBox SelectedIndex="{Binding ThemeMode, Mode=TwoWay}" Width="180">
+                                            <ComboBoxItem>Тёмная</ComboBoxItem>
+                                            <ComboBoxItem>Светлая</ComboBoxItem>
+                                            <ComboBoxItem>Системная</ComboBoxItem>
+                                        </ComboBox>
+                                        <TextBox Width="120" Watermark="#4ADE80"
+                                                 Text="{Binding AccentColor, Mode=TwoWay}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Hosts editor -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Classes="h2" Text="Hosts (альтернативные DNS)" />
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <Button Content="Прочитать /etc/hosts" Command="{Binding RefreshHostsCommand}" />
+                                        <Button Content="Сохранить патч (нужно ручное применение)"
+                                                Command="{Binding StageHostsPatchCommand}" />
+                                    </StackPanel>
+                                    <ItemsControl ItemsSource="{Binding HostsMappings}" MaxHeight="160">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock>
+                                                    <Run Text="{Binding Ip}" />
+                                                    <Run Text=" → " />
+                                                    <Run Text="{Binding Host}" />
+                                                </TextBlock>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <TextBlock Text="{Binding HostsPatchInfo}" FontFamily="Consolas,Courier New,monospace"
+                                               Foreground="#888" FontSize="12" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Toggles -->
+                            <Border Classes="card">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Classes="h2" Text="Переключатели" />
+                                    <CheckBox Content="Стример-режим (скрывать ник, токены, IP серверов)"
+                                              IsChecked="{Binding StreamerModeEnabled, Mode=TwoWay}" />
+                                    <CheckBox Content="Компактный режим окна (520×380)"
+                                              IsChecked="{Binding CompactMode, Mode=TwoWay}" />
+                                    <CheckBox Content="Запускать с системой (autostart)"
+                                              IsChecked="{Binding AutostartWithOs, Mode=TwoWay}" />
+                                    <CheckBox Content="Системные уведомления (toast)"
+                                              IsChecked="{Binding NotificationsEnabled, Mode=TwoWay}" />
+                                    <CheckBox Content="Анонимная телеметрия (краши, FPS, GPU)"
+                                              IsChecked="{Binding TelemetryEnabled, Mode=TwoWay}" />
+                                    <CheckBox Content="Авто-FPS-профиль по железу"
+                                              IsChecked="{Binding AutoFpsProfile, Mode=TwoWay}" />
+                                    <CheckBox Content="Network tuner (TCP/IPv4 JVM-аргументы)"
+                                              IsChecked="{Binding NetworkTunerEnabled, Mode=TwoWay}" />
+                                    <CheckBox Content="Понижать приоритет фоновых процессов (Chrome/Discord)"
+                                              IsChecked="{Binding DemoteBackgroundProcs, Mode=TwoWay}" />
+                                    <CheckBox Content="Скачивать обновления в фоне"
+                                              IsChecked="{Binding BackgroundUpdateEnabled, Mode=TwoWay}" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+
                     <!-- About -->
                     <ScrollViewer IsVisible="{Binding IsAboutTab}" Padding="36,32,36,28">
                         <StackPanel Spacing="16" MaxWidth="900">
@@ -711,7 +1400,8 @@
                             <Border Classes="card">
                                 <StackPanel Spacing="10">
                                     <TextBlock Classes="h2" Text="PcLun" />
-                                    <TextBlock Classes="subtitle" Text="Версия 0.2.4 · Ultra FPS Edition" />
+                                    <TextBlock Classes="subtitle"
+                                               Text="{Binding CurrentLauncherVersion, StringFormat='Версия {0} · Community Edition'}" />
                                     <Border Classes="divider" />
                                     <TextBlock Classes="subtitle" TextWrapping="Wrap"
                                                Text="Минималистичный лаунчер Minecraft 1.16.5 с авто-установкой OptiFine, профилями FPS-оптимизации и онлайн-счётчиком." />
@@ -755,6 +1445,7 @@
                         </StackPanel>
                     </ScrollViewer>
 
+                    </Grid>
                 </Grid>
             </ScrollViewer>
 

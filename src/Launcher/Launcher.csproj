@@ -9,12 +9,14 @@
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <RootNamespace>PcLun</RootNamespace>
     <AssemblyName>PcLun</AssemblyName>
-    <Version>0.2.4</Version>
+    <Version>0.4.0</Version>
+    <AssemblyVersion>0.4.0.0</AssemblyVersion>
+    <FileVersion>0.4.0.0</FileVersion>
     <ApplicationIcon>app.ico</ApplicationIcon>
     <AssemblyTitle>PcLun by MrDomik</AssemblyTitle>
     <Product>PcLun by MrDomik</Product>
     <Company>MrDomik</Company>
-    <Description>Minecraft 1.16.5 + OptiFine launcher — Ultra FPS Edition by MrDomik</Description>
+    <Description>Minecraft 1.16.5 + OptiFine launcher — Community Edition by MrDomik</Description>
     <Copyright>© 2026 MrDomik</Copyright>
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
