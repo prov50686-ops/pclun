@@ -16,7 +16,7 @@
     <AssemblyTitle>PcLun by MrDomik</AssemblyTitle>
     <Product>PcLun by MrDomik</Product>
     <Company>MrDomik</Company>
-    <Description>Minecraft 1.16.5 + OptiFine launcher — Community Edition by MrDomik</Description>
+    <Description>PcLun by MrDomik — современный open-source лаунчер Minecraft на русском. Theme 2026.</Description>
     <Copyright>© 2026 MrDomik</Copyright>
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
