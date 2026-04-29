@@ -4,7 +4,7 @@
 
 ### Лёгкий, современный лаунчер Minecraft на русском — для слабых ПК
 
-**Theme 2026 · v0.5.0** — полный редизайн интерфейса, чёрно-белая палитра
+**Theme 2026 · v0.5.1** — стабильные фиксы поверх редизайна v0.5.0
 
 [![Build Windows](https://github.com/prov50686-ops/pclun/actions/workflows/build-windows.yml/badge.svg)](https://github.com/prov50686-ops/pclun/actions/workflows/build-windows.yml)
 [![Build Linux](https://github.com/prov50686-ops/pclun/actions/workflows/build-linux.yml/badge.svg)](https://github.com/prov50686-ops/pclun/actions/workflows/build-linux.yml)
@@ -25,26 +25,37 @@
 
 ---
 
-## 🆕 Что нового в v0.5.0 — Theme 2026 🎨
+## 🆕 Что нового в v0.5.1 — багфиксы
 
-Большой визуальный апдейт без изменения функциональности. Чёрно-белая палитра остаётся, но интерфейс ощущается современнее и опрятнее — «product OS» 2026 года.
+Стабильность поверх дизайн-апдейта v0.5.0. UI и функциональность те же — починены только баги:
 
-- 🖤 Углублённая монохромная палитра (`#070708` → `#16161A` → `#1C1C20`), смягчённый текст (`#F5F5F7` / `#9C9CA3` / `#5A5A60`).
-- 🔤 Новая иерархия типографики (`h1`/`h2`/`h3`/`subtitle`/`label`/`brand` + `mono`), `LineHeight` у заголовков.
-- 🪟 Карточки и поверхности с радиусами 14–22 и мягкими `BoxShadow`. Hero-блок с диагональным B&W-градиентом.
-- 🎬 Кнопка  «Играть» — белый вертикальный градиент, радиус 16, отдельные стили hover/pressed/disabled.
-- 🧭 Сайдбар — у активного пункта появилась тонкая белая полоска-индикатор слева.
-- 📝 `TextBox` / `ComboBox` — focus-обводка 1.5px белым, hover = `BorderAccent`.
-- 🔘 Новые pill-стили: `pill`, `pill-success`, `pill-warning`, `pill-accent` (чёрный текст на белом).
-- 📊 `ProgressBar` — 8px, полностью скруглённый индикатор. `CheckBox`, `Slider`, `ScrollBar`, `ToolTip`, `TabItem` приведены к единому стилю.
+- 🛡 **Краш «Call from invalid thread»** при установке Performance Pack починен. Все UI-биндинги (`IsBusy`, `StatusText`, `ProgressPercent` и т.д.) теперь thread-safe.
+- 📦 **Performance Pack теперь реально качается.** Убрали хардкод на CurseForge mediafilez (он 403'ит third-party с 2022) — моды резолвятся через Modrinth API. FerriteCore + EntityCulling + MemoryLeakFix приходят и устанавливаются.
+- 🐧 **Forge installer на Linux/macOS** запускается через `java -jar` напрямую, вместо `xdg-open` (который открывал .jar в архиваторе/браузере). Если java не найдена — открываем папку с installer'ом.
+- 🤫 **Тише лог при недоступном бэкенде.** `OnlineService` теперь circuit breaker на 5 минут после первой ошибки + одна `INFO` вместо `WARN` спама.
 
-Полный список — в [CHANGELOG »](./CHANGELOG.md#050--2026-04-29--theme-2026-).
+Полный список — в [CHANGELOG »](./CHANGELOG.md#051--2026-04-29--bugfixes).
+
+<details>
+<summary>🎨 Что было в v0.5.0 — Theme 2026</summary>
+
+Большой визуальный апдейт без изменения функциональности. Чёрно-белая палитра остаётся, но интерфейс ощущается современнее — «product OS» 2026 года.
+
+- 🖤 Углублённая монохромная палитра (`#070708` → `#16161A` → `#1C1C20`).
+- 🔤 Новая иерархия типографики, `LineHeight` у заголовков.
+- 🪟 Карточки 14–22px с мягкими `BoxShadow`. Hero с диагональным B&W-градиентом.
+- 🎬 Белая «Играть» с градиентом, состояния hover/pressed/disabled.
+- 🧭 Тонкая белая полоска-индикатор активной вкладки в сайдбаре.
+- 🔘 Pill-стили `pill-success` / `pill-warning` / `pill-accent`.
+- 📊 `ProgressBar` 8px, полностью скруглённый.
+
+</details>
 
 ---
 
 ## 📸 Как выглядит
 
-> Скриншоты v0.5.0 в стиле **Theme 2026** — глубокий монохром, белая «Играть», тонкая полоска-индикатор активной вкладки.
+> Скриншоты в стиле **Theme 2026** — глубокий монохром, белая «Играть», тонкая полоска-индикатор активной вкладки.
 
 | Главная — запуск в один клик | Pro — мульти-инстансы, Modrinth, серверы, друзья |
 |:---:|:---:|
@@ -110,10 +121,10 @@
 | Платформа | Файл | Описание |
 |---|---|---|
 | 🪟 Windows | `PcLun.exe` | Single-file, портативная (~70 МБ) |
-| 🪟 Windows | `PcLun-0.5.0.msi` | Классический инсталлятор |
+| 🪟 Windows | `PcLun-0.5.1.msi` | Классический инсталлятор |
 | 🐧 Linux x64 | `PcLun-linux-x64` | Self-contained binary |
-| 🐧 Debian/Ubuntu | `pclun_0.5.0_amd64.deb` | `sudo dpkg -i pclun_0.5.0_amd64.deb` |
-| 🐧 Fedora/RHEL | `pclun-0.5.0-1.x86_64.rpm` | `sudo dnf install ./pclun-0.5.0-1.x86_64.rpm` |
+| 🐧 Debian/Ubuntu | `pclun_0.5.1_amd64.deb` | `sudo dpkg -i pclun_0.5.1_amd64.deb` |
+| 🐧 Fedora/RHEL | `pclun-0.5.1-1.x86_64.rpm` | `sudo dnf install ./pclun-0.5.1-1.x86_64.rpm` |
 | 🍎 macOS Intel | `PcLun-osx-x64` | `chmod +x PcLun-osx-x64 && ./PcLun-osx-x64` |
 | 🍎 macOS Apple Silicon | `PcLun-osx-arm64` | M1/M2/M3 |
 

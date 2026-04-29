@@ -24,7 +24,7 @@ public static class TelemetryService
     }
 
     public static Task ReportCrashAsync(string diagnosis, bool enabled) =>
-        SendAsync("crash", new { diagnosis, version = "0.5.0", os = Environment.OSVersion.ToString() }, enabled);
+        SendAsync("crash", new { diagnosis, version = "0.5.1", os = Environment.OSVersion.ToString() }, enabled);
 
     public static Task ReportPerfAsync(double avgFps, int ramMb, string profile, bool enabled) =>
         SendAsync("perf", new { avgFps, ramMb, profile }, enabled);

@@ -1,5 +1,5 @@
 cask "pclun" do
-  version "0.5.0"
+  version "0.5.1"
   sha256 :no_check
 
   url "https://github.com/prov50686-ops/pclun/releases/download/v#{version}/PcLun-osx-x64.zip"
