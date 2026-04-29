@@ -4,7 +4,7 @@
 
 ### Лёгкий лаунчер Minecraft на русском — для слабых ПК
 
-**Pro Edition · v0.4.0**
+**Theme 2026 · v0.5.0**
 
 [![Build Windows](https://github.com/prov50686-ops/pclun/actions/workflows/build-windows.yml/badge.svg)](https://github.com/prov50686-ops/pclun/actions/workflows/build-windows.yml)
 [![Build Linux](https://github.com/prov50686-ops/pclun/actions/workflows/build-linux.yml/badge.svg)](https://github.com/prov50686-ops/pclun/actions/workflows/build-linux.yml)
@@ -51,7 +51,7 @@
 - 🧠 **Умный JVM**: G1GC + Aikar-style флаги, авто-`-Xmx` по системной RAM
 - 🔐 **Два режима входа**: офлайн (любой ник) или Microsoft Account (премиум)
 
-### Pro Edition (v0.4.0)
+### Pro Edition (v0.5.0)
 - 🗂 **Мульти-инстансы** — отдельный `.minecraft` под каждый профиль
 - 🎯 **Любая версия Minecraft** через Mojang piston-meta (1.8.9, 1.12.2, 1.16.5, 1.18.2, 1.19.4, 1.20.1)
 - 📦 **Импорт модпаков** `.zip`, `.mrpack`, CurseForge overrides
@@ -91,10 +91,10 @@
 | Платформа | Файл | Описание |
 |---|---|---|
 | 🪟 Windows | `PcLun.exe` | Single-file, портативная (~70 МБ) |
-| 🪟 Windows | `PcLun-0.4.0.msi` | Классический инсталлятор |
+| 🪟 Windows | `PcLun-0.5.0.msi` | Классический инсталлятор |
 | 🐧 Linux x64 | `PcLun-linux-x64` | Self-contained binary |
-| 🐧 Debian/Ubuntu | `pclun_0.4.0_amd64.deb` | `sudo dpkg -i pclun_0.4.0_amd64.deb` |
-| 🐧 Fedora/RHEL | `pclun-0.4.0-1.x86_64.rpm` | `sudo dnf install ./pclun-0.4.0-1.x86_64.rpm` |
+| 🐧 Debian/Ubuntu | `pclun_0.5.0_amd64.deb` | `sudo dpkg -i pclun_0.5.0_amd64.deb` |
+| 🐧 Fedora/RHEL | `pclun-0.5.0-1.x86_64.rpm` | `sudo dnf install ./pclun-0.5.0-1.x86_64.rpm` |
 | 🍎 macOS Intel | `PcLun-osx-x64` | `chmod +x PcLun-osx-x64 && ./PcLun-osx-x64` |
 | 🍎 macOS Apple Silicon | `PcLun-osx-arm64` | M1/M2/M3 |
 
